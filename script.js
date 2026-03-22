@@ -19,11 +19,11 @@ function setAdultFieldsState(card, isAdult) {
 
   if (dietInput) {
     if (isAdult) {
-      if (dietInput.value === "Menu infantil") {
+      if (dietInput.value === "Menú infantil") {
         dietInput.value = "";
       }
     } else {
-      dietInput.value = "Menu infantil";
+      dietInput.value = "Menú infantil";
     }
   }
 
@@ -36,7 +36,7 @@ function setAdultFieldsState(card, isAdult) {
 
   if (!isAdult) {
     const childDietButton = card.querySelector(
-      '.choice-group[data-field="dietType"] .choice-btn[data-value="Menu infantil"]'
+      '.choice-group[data-field="dietType"] .choice-btn[data-value="Menú infantil"]'
     );
     if (childDietButton instanceof HTMLElement) {
       childDietButton.classList.add("is-active");
@@ -69,7 +69,7 @@ function createGuestCard(index) {
       Tipo
       <div class="choice-group" data-field="guestKind" role="radiogroup" aria-label="Tipo de invitado">
         <button type="button" class="choice-btn is-active" data-value="Adulto">Adulto/a</button>
-        <button type="button" class="choice-btn" data-value="Nino">Niño/a</button>
+        <button type="button" class="choice-btn" data-value="Niño">Niño/a</button>
         <input type="hidden" name="guestKind[]" value="Adulto" />
       </div>
     </label>
@@ -87,7 +87,7 @@ function createGuestCard(index) {
         <button
           type="button"
           class="choice-btn"
-          data-value="Omnívoro - meloso de ternera com parmentier de patata y salsa de vino negro"
+          data-value="Omnívoro - meloso de ternera con parmentier de patata y salsa de vino negro"
         >
           Omnívoro ternera
         </button>
@@ -190,7 +190,7 @@ function buildConfirmationHtml(contactName, guests) {
     .map((guest, index) => {
       return `
         <li>
-          <p><strong>${index + 1}. ${guest.name}</strong> (${guest.guestKind === "Nino" ? "Niño/a" : "Adulto/a"})</p>
+          <p><strong>${index + 1}. ${guest.name}</strong> (${guest.guestKind === "Niño" ? "Niño/a" : "Adulto/a"})</p>
           <p><strong>Menú:</strong> ${guest.dietType}</p>
           <p><strong>Se queda a dormir:</strong> ${guest.stayOvernight}</p>
           <p><strong>Comentarios:</strong> ${guest.notes || "Sin comentarios"}</p>
