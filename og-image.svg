@@ -1,0 +1,60 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Raquel y Sergio - Invitacion de boda</title>
+  <desc id="desc">Imagen para compartir la invitacion de boda con nombres, fecha, hora y lugar.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F9F3FF"/>
+      <stop offset="1" stop-color="#F1E5FF"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(190 110) rotate(14) scale(260 150)">
+      <stop stop-color="#E6CDFF"/>
+      <stop offset="1" stop-color="#E6CDFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1080 500) rotate(-22) scale(300 180)">
+      <stop stop-color="#D8B5FF"/>
+      <stop offset="1" stop-color="#D8B5FF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="card" x1="160" y1="90" x2="1040" y2="540" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.94"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.88"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <ellipse cx="190" cy="110" rx="260" ry="150" fill="url(#glowA)"/>
+  <ellipse cx="1080" cy="500" rx="300" ry="180" fill="url(#glowB)"/>
+
+  <rect x="130" y="70" width="940" height="490" rx="36" fill="url(#card)" stroke="#E8D8FB" stroke-width="2"/>
+
+  <text x="600" y="190" text-anchor="middle" fill="#5B367F" font-family="Georgia, 'Times New Roman', serif" font-size="74" font-weight="700">
+    Raquel &amp; Sergio
+  </text>
+
+  <line x1="330" y1="232" x2="870" y2="232" stroke="#D8C1F2" stroke-width="2"/>
+
+  <text x="220" y="310" fill="#6C5B80" font-family="Manrope, Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="1.2">
+    FECHA
+  </text>
+  <text x="220" y="352" fill="#2F2440" font-family="Manrope, Arial, sans-serif" font-size="34" font-weight="700">
+    Sabado 24 de octubre de 2026
+  </text>
+
+  <text x="220" y="420" fill="#6C5B80" font-family="Manrope, Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="1.2">
+    HORA
+  </text>
+  <text x="220" y="462" fill="#2F2440" font-family="Manrope, Arial, sans-serif" font-size="34" font-weight="700">
+    12:00
+  </text>
+
+  <text x="700" y="420" fill="#6C5B80" font-family="Manrope, Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="1.2">
+    LUGAR
+  </text>
+  <text x="700" y="462" fill="#2F2440" font-family="Manrope, Arial, sans-serif" font-size="34" font-weight="700">
+    Can Caballé, Girona
+  </text>
+
+  <text x="600" y="520" text-anchor="middle" fill="#7A6393" font-family="Manrope, Arial, sans-serif" font-size="20" font-weight="600" letter-spacing="0.8">
+    ¡Nos casamos!
+  </text>
+</svg>
