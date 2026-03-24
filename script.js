@@ -2,7 +2,29 @@ const form = document.getElementById("menuForm");
 const confirmation = document.getElementById("confirmation");
 const guestsContainer = document.getElementById("guestsContainer");
 const addGuestButton = document.getElementById("addGuest");
+const attendanceDetails = document.getElementById("attendanceDetails");
 const step1 = document.getElementById("step1");
+
+function updateAttendanceDetailsVisibility(status) {
+  if (!(attendanceDetails instanceof HTMLElement)) {
+    return;
+  }
+
+  const isAttending = status === "confirm";
+  attendanceDetails.classList.toggle("hidden", !isAttending);
+
+  const controls = attendanceDetails.querySelectorAll("input, textarea, select, button");
+  controls.forEach((control) => {
+    if (
+      control instanceof HTMLInputElement ||
+      control instanceof HTMLTextAreaElement ||
+      control instanceof HTMLSelectElement ||
+      control instanceof HTMLButtonElement
+    ) {
+      control.disabled = !isAttending;
+    }
+  });
+}
 
 function setAdultFieldsState(card, isAdult) {
   const adultOnlyFields = card.querySelectorAll(".adult-only-field");
@@ -152,14 +174,45 @@ function getGuestData(card) {
 }
 
 function validateStep1() {
-  const step1Fields = step1.querySelectorAll('input[type="text"], textarea');
+  const attendanceInput = form.querySelector('input[name="attendanceStatus"]');
+  const attendanceStatus =
+    attendanceInput instanceof HTMLInputElement ? attendanceInput.value : "";
+
+  if (!attendanceStatus) {
+    alert("Selecciona si confirmáis asistencia o no podéis venir.");
+    return false;
+  }
+
+  const step1Fields = step1.querySelectorAll('input[type="text"]');
 
   for (const field of step1Fields) {
-    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
-      if (!field.checkValidity()) {
-        field.reportValidity();
-        return false;
-      }
+    if (!(field instanceof HTMLInputElement)) {
+      continue;
+    }
+
+    if (field.name !== "contactName" && attendanceStatus !== "confirm") {
+      continue;
+    }
+
+    if (!field.checkValidity()) {
+      field.reportValidity();
+      return false;
+    }
+  }
+
+  if (attendanceStatus !== "confirm") {
+    return true;
+  }
+
+  const textareas = step1.querySelectorAll('textarea[name="guestNotes[]"]');
+  for (const textarea of textareas) {
+    if (!(textarea instanceof HTMLTextAreaElement)) {
+      continue;
+    }
+
+    if (!textarea.checkValidity()) {
+      textarea.reportValidity();
+      return false;
     }
   }
 
@@ -208,6 +261,15 @@ function buildConfirmationHtml(contactName, guests) {
   `;
 }
 
+function buildDeclineConfirmationHtml(contactName) {
+  return `
+    <h3>Respuesta guardada</h3>
+    <p><strong>Completado por:</strong> ${contactName}</p>
+    <p><strong>Asistencia:</strong> No podremos ir :(</p>
+    <p>Gracias por avisarnos.</p>
+  `;
+}
+
 function setChoiceValue(group, button) {
   if (!(group instanceof HTMLElement) || !(button instanceof HTMLElement)) {
     return;
@@ -233,7 +295,7 @@ addGuestButton.addEventListener("click", () => {
   updateGuestTitles();
 });
 
-guestsContainer.addEventListener("click", (event) => {
+step1.addEventListener("click", (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement) || !target.classList.contains("remove-guest")) {
     return;
@@ -248,7 +310,7 @@ guestsContainer.addEventListener("click", (event) => {
   updateGuestTitles();
 });
 
-guestsContainer.addEventListener("click", (event) => {
+step1.addEventListener("click", (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) {
     return;
@@ -266,6 +328,11 @@ guestsContainer.addEventListener("click", (event) => {
 
   setChoiceValue(group, button);
 
+  if (group.dataset.field === "attendanceStatus") {
+    updateAttendanceDetailsVisibility(button.dataset.value || "confirm");
+    return;
+  }
+
   const card = target.closest(".guest-card");
   if (!card) {
     return;
@@ -278,6 +345,13 @@ guestsContainer.addEventListener("click", (event) => {
 
 });
 
+  const initialAttendanceInput = form.querySelector('input[name="attendanceStatus"]');
+const initialAttendanceStatus =
+  initialAttendanceInput instanceof HTMLInputElement
+    ? initialAttendanceInput.value
+    : "";
+updateAttendanceDetailsVisibility(initialAttendanceStatus);
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -288,15 +362,20 @@ form.addEventListener("submit", async (event) => {
   const contactNameInput = form.querySelector('input[name="contactName"]');
   const cards = guestsContainer.querySelectorAll(".guest-card");
 
-  if (!contactNameInput || !cards.length) {
+  if (!contactNameInput) {
     return;
   }
 
   const guests = Array.from(cards).map((card) => getGuestData(card));
+  const attendanceInput = form.querySelector('input[name="attendanceStatus"]');
+  const attendanceStatus =
+    attendanceInput instanceof HTMLInputElement ? attendanceInput.value : "";
+  const isAttending = attendanceStatus === "confirm";
 
   const payload = {
     contactName: contactNameInput.value.trim(),
-    guests
+    attendanceStatus,
+    guests: isAttending ? guests : []
   };
 
   const endpoint = form.dataset.endpoint;
@@ -306,6 +385,7 @@ form.addEventListener("submit", async (event) => {
       const cc = (form.dataset.cc || "").trim();
       const formData = new FormData();
       formData.append("contact_name", payload.contactName);
+      formData.append("attendance_status", payload.attendanceStatus);
       formData.append("total_people", String(payload.guests.length));
       formData.append("guests", JSON.stringify(payload.guests));
       formData.append("_subject", "Nueva confirmación de asistencia");
@@ -328,9 +408,8 @@ form.addEventListener("submit", async (event) => {
     }
   }
 
-  confirmation.innerHTML = buildConfirmationHtml(
-    payload.contactName,
-    payload.guests
-  );
+  confirmation.innerHTML = payload.attendanceStatus === "confirm"
+    ? buildConfirmationHtml(payload.contactName, payload.guests)
+    : buildDeclineConfirmationHtml(payload.contactName);
   confirmation.classList.add("show");
 });

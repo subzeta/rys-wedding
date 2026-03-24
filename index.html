@@ -120,98 +120,118 @@
               />
             </label>
 
-            <div id="guestsContainer" class="guests-container">
-              <article class="guest-card" data-guest-index="0">
-                <div class="guest-card-header">
-                  <h3>Invitado 1</h3>
-                </div>
+            <label>
+              ¿Podréis venir?
+              <div
+                class="choice-group"
+                data-field="attendanceStatus"
+                role="radiogroup"
+                aria-label="Confirmación de asistencia"
+              >
+                <button type="button" class="choice-btn" data-value="confirm">
+                  ¡Confirmamos asistencia!
+                </button>
+                <button type="button" class="choice-btn" data-value="decline">
+                  No podremos ir :(
+                </button>
+                <input type="hidden" name="attendanceStatus" value="" />
+              </div>
+            </label>
 
-                <label>
-                  Nombre
-                  <input
-                    type="text"
-                    name="guestName[]"
-                    required
-                    placeholder=""
-                  />
-                </label>
-
-                <label>
-                  Tipo
-                  <div
-                    class="choice-group"
-                    data-field="guestKind"
-                    role="radiogroup"
-                    aria-label="Tipo de invitado"
-                  >
-                    <button type="button" class="choice-btn is-active" data-value="Adulto">
-                      Adulto/a
-                    </button>
-                    <button type="button" class="choice-btn" data-value="Niño">
-                      Niño/a
-                    </button>
-                    <input type="hidden" name="guestKind[]" value="Adulto" />
+            <div id="attendanceDetails" class="hidden">
+              <div id="guestsContainer" class="guests-container">
+                <article class="guest-card" data-guest-index="0">
+                  <div class="guest-card-header">
+                    <h3>Invitado 1</h3>
                   </div>
-                </label>
 
-                <label class="adult-only-field">
-                  Tipo de menú
-                  <div
-                    class="choice-group"
-                    data-field="dietType"
-                    role="radiogroup"
-                    aria-label="Tipo de menú"
-                  >
-                    <button
-                      type="button"
-                      class="choice-btn"
-                      data-value="Omnívoro - bacalao gratinado con muselina de ajo, hummus negro y verduritas salteadas"
+                  <label>
+                    Nombre
+                    <input
+                      type="text"
+                      name="guestName[]"
+                      required
+                      placeholder=""
+                    />
+                  </label>
+
+                  <label>
+                    Tipo
+                    <div
+                      class="choice-group"
+                      data-field="guestKind"
+                      role="radiogroup"
+                      aria-label="Tipo de invitado"
                     >
-                      Omnívoro bacalao
-                    </button>
-                    <button
-                      type="button"
-                      class="choice-btn"
-                      data-value="Omnívoro - meloso de ternera con parmentier de patata y salsa de vino negro"
+                      <button type="button" class="choice-btn is-active" data-value="Adulto">
+                        Adulto/a
+                      </button>
+                      <button type="button" class="choice-btn" data-value="Niño">
+                        Niño/a
+                      </button>
+                      <input type="hidden" name="guestKind[]" value="Adulto" />
+                    </div>
+                  </label>
+
+                  <label class="adult-only-field">
+                    Tipo de menú
+                    <div
+                      class="choice-group"
+                      data-field="dietType"
+                      role="radiogroup"
+                      aria-label="Tipo de menú"
                     >
-                      Omnívoro ternera
-                    </button>
-                    <button type="button" class="choice-btn" data-value="Vegetariano">
-                      Vegetariano
-                    </button>
-                    <button type="button" class="choice-btn" data-value="Vegano">Vegano</button>
-                    <input type="hidden" name="dietType[]" value="" />
-                  </div>
-                </label>
+                      <button
+                        type="button"
+                        class="choice-btn"
+                        data-value="Omnívoro - bacalao gratinado con muselina de ajo, hummus negro y verduritas salteadas"
+                      >
+                        Omnívoro bacalao
+                      </button>
+                      <button
+                        type="button"
+                        class="choice-btn"
+                        data-value="Omnívoro - meloso de ternera con parmentier de patata y salsa de vino negro"
+                      >
+                        Omnívoro ternera
+                      </button>
+                      <button type="button" class="choice-btn" data-value="Vegetariano">
+                        Vegetariano
+                      </button>
+                      <button type="button" class="choice-btn" data-value="Vegano">Vegano</button>
+                      <input type="hidden" name="dietType[]" value="" />
+                    </div>
+                  </label>
 
-                <p class="kid-only-field hidden">Menú infantil (automático).</p>
+                  <p class="kid-only-field hidden">Menú infantil (automático).</p>
 
-                <label>
-                  Alojamiento (y desayuno)
-                  <div
-                    class="choice-group"
-                    data-field="stayOvernight"
-                    role="radiogroup"
-                    aria-label="Alojamiento y desayuno"
-                  >
-                    <button type="button" class="choice-btn" data-value="Si">Sí</button>
-                    <button type="button" class="choice-btn" data-value="No">No</button>
-                    <input type="hidden" name="stayOvernight[]" value="" />
-                  </div>
-                </label>
+                  <label>
+                    Alojamiento (y desayuno)
+                    <div
+                      class="choice-group"
+                      data-field="stayOvernight"
+                      role="radiogroup"
+                      aria-label="Alojamiento y desayuno"
+                    >
+                      <button type="button" class="choice-btn" data-value="Si">Sí</button>
+                      <button type="button" class="choice-btn" data-value="No">No</button>
+                      <input type="hidden" name="stayOvernight[]" value="" />
+                    </div>
+                  </label>
 
-                <label>
-                  Comentarios (opcional)
-                  <textarea
-                    name="guestNotes[]"
-                    rows="3"
-                    placeholder="Alergias, intolerancias o cualquier detalle"
-                  ></textarea>
-                </label>
-              </article>
+                  <label>
+                    Comentarios (opcional)
+                    <textarea
+                      name="guestNotes[]"
+                      rows="3"
+                      placeholder="Alergias, intolerancias o cualquier detalle"
+                    ></textarea>
+                  </label>
+                </article>
+              </div>
+
+              <button type="button" id="addGuest" class="btn btn-secondary">+ Añadir invitad@</button>
             </div>
-
-            <button type="button" id="addGuest" class="btn btn-secondary">+ Añadir invitad@</button>
 
             <div class="step-actions">
               <button type="submit" class="btn">Guardar respuesta</button>

@@ -388,6 +388,11 @@ textarea:focus {
   display: none;
 }
 
+#attendanceDetails:not(.hidden) {
+  display: grid;
+  gap: 0.95rem;
+}
+
 .confirmation {
   margin-top: 1rem;
   display: none;
