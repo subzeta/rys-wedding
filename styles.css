@@ -393,12 +393,29 @@ textarea:focus {
 }
 
 .confirmation {
-  margin-top: 1rem;
+  margin-top: 0.8rem;
+  margin-bottom: 0.2rem;
   display: none;
   background: #f5ecff;
   border: 1px solid #dac0ff;
   border-radius: 16px;
   padding: 1.05rem;
+  scroll-margin-top: 20vh;
+}
+
+.confirmation.is-info {
+  background: #f4f8ff;
+  border-color: #b8d3ff;
+}
+
+.confirmation.is-success {
+  background: #effbf2;
+  border-color: #bde8c7;
+}
+
+.confirmation.is-error {
+  background: #fff3f3;
+  border-color: #f3b7b7;
 }
 
 .confirmation.show {

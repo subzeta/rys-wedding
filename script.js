@@ -5,6 +5,18 @@ const addGuestButton = document.getElementById("addGuest");
 const attendanceDetails = document.getElementById("attendanceDetails");
 const step1 = document.getElementById("step1");
 
+function showSubmissionMessage(type, html) {
+  confirmation.classList.remove("is-success", "is-error", "is-info");
+  confirmation.classList.add("show");
+  confirmation.classList.add(type);
+  confirmation.innerHTML = html;
+  confirmation.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+  confirmation.focus();
+}
+
 function updateAttendanceDetailsVisibility(status) {
   if (!(attendanceDetails instanceof HTMLElement)) {
     return;
@@ -253,17 +265,19 @@ function buildConfirmationHtml(contactName, guests) {
     .join("");
 
   return `
-    <h3>Respuesta guardada</h3>
+    <h3>Formulario guardado correctamente</h3>
+    <p><strong>Gracias.</strong> Hemos recibido y guardado vuestra respuesta correctamente.</p>
     <p><strong>Completado por:</strong> ${contactName}</p>
     <p><strong>Total de invitados:</strong> ${guests.length}</p>
     <ol class="confirmation-list">${guestItems}</ol>
-    <p>Gracias por confirmar. Nos hace mucha ilusión celebrar este día con vosotros.</p>
+    <p>Nos hace mucha ilusión celebrar este día con vosotros.</p>
   `;
 }
 
 function buildDeclineConfirmationHtml(contactName) {
   return `
-    <h3>Respuesta guardada</h3>
+    <h3>Formulario guardado correctamente</h3>
+    <p><strong>Gracias.</strong> Hemos recibido y guardado vuestra respuesta correctamente.</p>
     <p><strong>Completado por:</strong> ${contactName}</p>
     <p><strong>Asistencia:</strong> No podremos ir :(</p>
     <p>Gracias por avisarnos.</p>
@@ -380,36 +394,70 @@ form.addEventListener("submit", async (event) => {
 
   const endpoint = form.dataset.endpoint;
 
-  if (endpoint) {
-    try {
-      const cc = (form.dataset.cc || "").trim();
-      const formData = new FormData();
-      formData.append("contact_name", payload.contactName);
-      formData.append("attendance_status", payload.attendanceStatus);
-      formData.append("total_people", String(payload.guests.length));
-      formData.append("guests", JSON.stringify(payload.guests));
-      formData.append("_subject", "Nueva confirmación de asistencia");
-      formData.append("_captcha", "false");
-      formData.append("_template", "table");
-      if (cc) {
-        formData.append("_cc", cc);
-      }
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error("No se pudo guardar la respuesta.");
-      }
-    } catch (error) {
-      alert("No se pudo guardar online. Se muestra el resumen igualmente.");
-    }
+  if (!endpoint) {
+    showSubmissionMessage(
+      "is-error",
+      "<h3>Error al guardar</h3><p>No hay endpoint configurado. La respuesta no se ha guardado.</p>"
+    );
+    return;
   }
 
-  confirmation.innerHTML = payload.attendanceStatus === "confirm"
-    ? buildConfirmationHtml(payload.contactName, payload.guests)
-    : buildDeclineConfirmationHtml(payload.contactName);
-  confirmation.classList.add("show");
+  const submitButton = form.querySelector('button[type="submit"]');
+  if (submitButton instanceof HTMLButtonElement) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Guardando...";
+  }
+
+  showSubmissionMessage(
+    "is-info",
+    "<h3>Enviando formulario...</h3><p>Estamos guardando vuestra respuesta.</p>"
+  );
+
+  try {
+    const formData = new FormData(form);
+    formData.append("totalPeople", String(payload.guests.length));
+    formData.append("guestsJson", JSON.stringify(payload.guests));
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Accept: "application/json"
+      },
+      body: formData
+    });
+
+    let data = null;
+    try {
+      data = await response.json();
+    } catch (_error) {
+      data = null;
+    }
+
+    if (!response.ok) {
+      const apiError = data?.errors?.[0]?.message || "El sistema no confirmó el guardado.";
+      throw new Error(apiError);
+    }
+
+    showSubmissionMessage(
+      "is-success",
+      payload.attendanceStatus === "confirm"
+        ? buildConfirmationHtml(payload.contactName, payload.guests)
+        : buildDeclineConfirmationHtml(payload.contactName)
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "No se pudo guardar el formulario. Revisa la conexión e inténtalo de nuevo.";
+
+    showSubmissionMessage(
+      "is-error",
+      `<h3>No se ha guardado el formulario</h3><p>Tu respuesta no se ha registrado.</p><p><strong>Detalle:</strong> ${message}</p><p>Por favor, vuelve a intentarlo.</p>`
+    );
+  } finally {
+    if (submitButton instanceof HTMLButtonElement) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Guardar respuesta";
+    }
+  }
 });
