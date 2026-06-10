@@ -286,6 +286,17 @@ textarea {
   gap: 0.5rem;
 }
 
+.choice-group--stacked {
+  flex-direction: column;
+  flex-wrap: nowrap;
+}
+
+.choice-group--stacked .choice-btn {
+  width: 100%;
+  white-space: normal;
+  text-align: left;
+}
+
 .choice-btn {
   border: 1px solid #ddc8f6;
   background: #fff;

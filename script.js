@@ -110,7 +110,7 @@ function createGuestCard(index) {
 
     <label class="adult-only-field">
       Tipo de menú
-      <div class="choice-group" data-field="dietType" role="radiogroup" aria-label="Tipo de menú">
+      <div class="choice-group choice-group--stacked" data-field="dietType" role="radiogroup" aria-label="Tipo de menú">
         <button
           type="button"
           class="choice-btn"
