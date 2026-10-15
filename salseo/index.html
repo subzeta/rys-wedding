@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex,nofollow" />
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob:; media-src blob:; connect-src 'self' https://*.workers.dev http://127.0.0.1:8787; object-src 'none'; base-uri 'none'; form-action 'self'" />
-    <title>Salseo · Raquel & Sergio</title>
+    <title>Recuerdos de nuestra boda · Raquel & Sergio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
@@ -22,8 +22,8 @@
     <main class="gallery-main">
       <section class="intro">
         <p class="eyebrow">Nuestro día, desde vuestros ojos</p>
-        <h1>Salseo<span>.</span></h1>
-        <p class="lead">Las risas, los abrazos, ese baile… Compartid aquí las fotos y vídeos que habéis hecho. Nos encantará guardarlos.</p>
+        <h1>Recuerdos de <br />nuestra boda<span>.</span></h1>
+        <p class="lead">Nuestro día, desde todos los ángulos. Las fotos, los vídeos y todo lo que merece quedarse.</p>
       </section>
 
       <section id="login-section" class="card login-card" aria-labelledby="login-title">
@@ -39,40 +39,64 @@
 
       <section id="album" hidden aria-label="Álbum compartido">
         <div class="album-toolbar">
-          <div><h2>Nuestro álbum</h2><p id="album-count">Cargando recuerdos…</p></div>
-          <button class="btn-link" id="logout" type="button">Salir</button>
-        </div>
-        <section class="card upload-card" aria-labelledby="upload-title">
-          <div>
-            <h3 id="upload-title">¿Qué momentos has capturado?</h3>
-            <p>Las fotos se podrán ver aquí. De los vídeos solo aparecerá una portada: los guardaremos para disfrutarlos después.</p>
+          <div><h2>Todos los recuerdos</h2><p id="album-count">Cargando recuerdos…</p></div>
+          <div class="toolbar-actions">
+            <button class="btn" data-open-upload type="button">＋ Subir fotos y vídeos</button>
+            <button class="icon-button" id="refresh" type="button" aria-label="Actualizar álbum" title="Actualizar álbum">↻</button>
+            <button class="btn-link" id="logout" type="button">Salir</button>
           </div>
-          <label for="guest-name">Tu nombre <span class="optional">(opcional)</span></label>
-          <input id="guest-name" type="text" autocomplete="name" maxlength="80" placeholder="Para saber de quién es cada recuerdo" />
-          <label class="btn file-picker" id="file-picker">
-            <span>＋ Añadir fotos y vídeos</span>
-            <input id="files" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/avif,video/mp4,video/quicktime,video/webm,video/3gpp,video/x-m4v,.heic,.heif,.mov,.m4v" multiple />
-          </label>
-          <p class="upload-hint">Hasta 100 MB por foto y 1 GB por vídeo. Mantén esta página abierta mientras se suben.</p>
-          <p id="uploads-closed" hidden>Ya hemos cerrado la recogida. ¡Gracias por todos los recuerdos!</p>
-          <ul id="upload-queue" aria-label="Estado de las subidas"></ul>
-        </section>
+        </div>
+        <p id="uploads-closed" class="album-note" hidden>Ya hemos cerrado la recogida. ¡Gracias por todos los recuerdos!</p>
         <aside id="admin-tools" class="admin-note" hidden>
           <strong>Acceso privado</strong>
-          <p>Puedes descargar cada original desde su tarjeta. Para llevarte todo el álbum de una vez, utiliza el exportador incluido en el proyecto.</p>
+          <p>Desde cada tarjeta puedes descargar el original o eliminar un recuerdo del álbum.</p>
         </aside>
-        <div class="view-toolbar">
-          <p>Pequeños momentos, grandes recuerdos.</p>
-          <button class="btn-link" id="refresh" type="button">Actualizar álbum</button>
-        </div>
-        <div id="grid" class="photo-grid"></div>
-        <div id="empty" class="empty-state" hidden><span aria-hidden="true">♡</span><h3>El primer recuerdo puede ser el tuyo</h3><p>Añade tus fotos y vídeos para empezar nuestro álbum.</p></div>
+        <p class="album-note">Fotos para revivirlo todo. Vídeos guardados para después.</p>
+        <div id="grid" class="photo-grid" tabindex="-1" aria-label="Fotos y vídeos compartidos"></div>
+        <div id="empty" class="empty-state" hidden><span aria-hidden="true">♡</span><h3>Un día así merece muchas fotos</h3><p>Estrena el álbum con tus momentos favoritos.</p><button class="btn" data-open-upload type="button">＋ Compartir mis recuerdos</button></div>
         <button id="load-more" class="btn btn-secondary" type="button" hidden>Ver más recuerdos</button>
       </section>
       <p id="message" class="message" role="status" aria-live="polite"></p>
       <noscript><p>Activa JavaScript para entrar en el álbum y compartir tus recuerdos.</p></noscript>
     </main>
     <footer class="gallery-footer">Gracias por vivir este día con nosotros. <span>R & S</span></footer>
+    <dialog id="upload-dialog" class="upload-dialog" aria-labelledby="upload-title">
+      <div class="dialog-heading">
+        <div><p class="eyebrow">Nuestro día, desde tus ojos</p><h2 id="upload-title">Comparte tus recuerdos</h2></div>
+        <button id="close-upload" class="icon-button" type="button" aria-label="Cerrar ventana de subida">✕</button>
+      </div>
+      <div class="upload-card">
+        <p>Elige varias fotos o vídeos de una vez. Nosotros guardamos los originales.</p>
+        <label for="guest-name">Tu nombre <span class="optional">(opcional)</span></label>
+        <input id="guest-name" type="text" autocomplete="name" maxlength="80" placeholder="¿Quién está detrás de la cámara?" />
+        <label class="file-picker" id="file-picker">
+          <span class="upload-symbol" aria-hidden="true">＋</span>
+          <strong>Elegir fotos y vídeos</strong>
+          <span>Puedes seleccionar varios a la vez</span>
+          <input id="files" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/avif,video/mp4,video/quicktime,video/webm,video/3gpp,video/x-m4v,.heic,.heif,.mov,.m4v" multiple />
+        </label>
+        <p class="upload-hint">Hasta 100 MB por foto y 1 GB por vídeo. Mantén la página abierta hasta que termine la subida.</p>
+        <ul id="upload-queue" aria-label="Estado de las subidas"></ul>
+      </div>
+    </dialog>
+    <aside id="upload-status" class="upload-status" hidden aria-label="Resumen de las subidas">
+      <div class="upload-status-top">
+        <span id="upload-status-icon" class="status-icon" aria-hidden="true">↑</span>
+        <div class="status-copy" role="status" aria-live="polite" aria-atomic="true"><strong id="upload-status-title"></strong><p id="upload-status-detail"></p></div>
+        <button id="dismiss-upload-status" class="icon-button" type="button" aria-label="Ocultar confirmación" hidden>✕</button>
+      </div>
+      <progress id="upload-total-progress" max="100" value="0" aria-label="Progreso total de las subidas"></progress>
+      <button id="upload-status-action" class="btn-link" type="button">Ver progreso</button>
+    </aside>
+    <dialog id="delete-dialog" class="delete-dialog" aria-labelledby="delete-title">
+      <h2 id="delete-title">¿Eliminar este recuerdo?</h2>
+      <p id="delete-file-name"></p>
+      <p>Se borrarán el original y su portada. Esta acción no se puede deshacer.</p>
+      <div class="delete-actions">
+        <button id="cancel-delete" class="btn btn-secondary" type="button" autofocus>Cancelar</button>
+        <button id="confirm-delete" class="btn btn-danger" type="button">Eliminar definitivamente</button>
+      </div>
+    </dialog>
     <dialog id="viewer" aria-label="Foto ampliada">
       <button id="close-viewer" class="btn btn-secondary" type="button" aria-label="Cerrar foto">Cerrar ✕</button>
       <img id="viewer-image" alt="" />

@@ -7,11 +7,98 @@ let role = "guest";
 let loginRole = "guest";
 let cursor = null;
 let itemCount = 0;
-let loading = false;
+let loading = null;
 let uploading = false;
 let settings;
 const queue = [];
 const previewURLs = new Set();
+const recentlyUploaded = new Set();
+let itemToDelete = null;
+let deleting = false;
+
+$("cancel-delete").addEventListener("click", () => $("delete-dialog").close());
+$("delete-dialog").addEventListener("cancel", (event) => { if (deleting) event.preventDefault(); });
+$("confirm-delete").addEventListener("click", async () => {
+  if (!itemToDelete || deleting) return;
+  deleting = true;
+  $("confirm-delete").disabled = $("cancel-delete").disabled = true;
+  $("confirm-delete").textContent = "Eliminando…";
+  try {
+    await api(`/api/items/${itemToDelete.id}`, { method: "DELETE" });
+    $("delete-dialog").close();
+    itemToDelete = null;
+    await loadItems(true);
+    message("Recuerdo eliminado del álbum.");
+  } catch (error) {
+    $("delete-dialog").close();
+    message(error.message, true);
+  } finally {
+    deleting = false;
+    $("confirm-delete").disabled = $("cancel-delete").disabled = false;
+    $("confirm-delete").textContent = "Eliminar definitivamente";
+  }
+});
+
+function openUpload() {
+  if (!$("upload-dialog").open) $("upload-dialog").showModal();
+}
+
+async function showNewItems() {
+  $("upload-dialog").close();
+  if (!$("grid").querySelector(".is-new") && recentlyUploaded.size) await loadItems(true);
+  const target = $("grid").querySelector(".is-new") || $("grid");
+  target.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" });
+  target.focus({ preventScroll: true });
+}
+
+function updateUploadStatus() {
+  if (!queue.length || !token) { $("upload-status").hidden = true; return; }
+  const done = queue.filter((item) => item.done).length;
+  const failed = queue.filter((item) => item.failed).length;
+  const total = queue.length;
+  const active = uploading || queue.some((item) => !item.done && !item.failed);
+  const title = active ? (done + failed === total ? "Terminando…" : `Subiendo ${done + failed + 1} de ${total}`)
+    : failed ? `${done} ${done === 1 ? "recuerdo guardado" : "recuerdos guardados"} · ${failed} sin subir`
+    : "¡Ya están en el álbum!";
+  const detail = active ? "Puedes seguir mirando el álbum. Mantén la página abierta."
+    : failed ? "Revisa los archivos pendientes y vuelve a intentarlo."
+    : `${done} ${done === 1 ? "recuerdo compartido" : "recuerdos compartidos"}. Gracias por guardar este día con nosotros.`;
+  $("upload-status").hidden = false;
+  $("upload-status").classList.toggle("is-success", !active && !failed);
+  $("upload-status").classList.toggle("has-errors", !active && Boolean(failed));
+  for (const [id, text] of [["upload-status-title", title], ["upload-status-detail", detail]]) {
+    if ($(id).textContent !== text) $(id).textContent = text;
+  }
+  $("upload-status-icon").textContent = active ? "↑" : failed ? "!" : "✓";
+  $("upload-total-progress").value = queue.reduce((sum, item) => sum + item.progress.value, 0) / total;
+  $("upload-total-progress").hidden = !active;
+  $("dismiss-upload-status").hidden = active;
+  $("upload-status-action").textContent = active ? "Ver progreso" : failed ? "Revisar subidas" : "Ver mis recuerdos";
+}
+
+function allowDiscard(item) {
+  if (item.discardButton) return;
+  item.discardButton = document.createElement("button");
+  item.discardButton.className = "btn-link";
+  item.discardButton.type = "button";
+  item.discardButton.textContent = "Quitar";
+  item.discardButton.setAttribute("aria-label", `Quitar ${item.file.name} de la lista de subidas`);
+  item.discardButton.addEventListener("click", () => {
+    item.row.remove();
+    const index = queue.indexOf(item);
+    if (index !== -1) queue.splice(index, 1);
+    updateUploadStatus();
+  });
+  item.row.append(item.discardButton);
+}
+
+document.querySelectorAll("[data-open-upload]").forEach((button) => button.addEventListener("click", openUpload));
+$("close-upload").addEventListener("click", () => $("upload-dialog").close());
+$("dismiss-upload-status").addEventListener("click", () => { $("upload-status").hidden = true; });
+$("upload-status-action").addEventListener("click", () => {
+  if (uploading || queue.some((item) => item.failed)) openUpload();
+  else showNewItems().catch((error) => message(error.message, true));
+});
 
 function message(text, error = false) {
   $("message").textContent = text;
@@ -48,6 +135,10 @@ function logout() {
   token = "";
   sessionStorage.removeItem("gallery-session");
   $("viewer").close();
+  $("upload-dialog").close();
+  $("delete-dialog").close();
+  $("upload-status").hidden = true;
+  document.body.classList.remove("in-album");
   $("viewer-image").removeAttribute("src");
   $("grid").replaceChildren();
   releasePreviews();
@@ -61,9 +152,11 @@ async function openAlbum() {
   role = settings.role;
   $("admin-tools").hidden = role !== "admin";
   $("file-picker").hidden = !settings.uploadsEnabled;
+  document.querySelectorAll("[data-open-upload]").forEach((button) => { button.hidden = !settings.uploadsEnabled; });
   $("uploads-closed").hidden = settings.uploadsEnabled;
   $("login-section").hidden = true;
   $("album").hidden = false;
+  document.body.classList.add("in-album");
   await loadItems(true);
 }
 
@@ -107,8 +200,21 @@ $("close-viewer").addEventListener("click", () => $("viewer").close());
 $("viewer").addEventListener("click", (event) => { if (event.target === $("viewer")) $("viewer").close(); });
 
 async function loadItems(reset = false) {
-  if (loading) return;
-  loading = true;
+  if (loading) {
+    await loading;
+    return reset ? loadItems(true) : undefined;
+  }
+  loading = renderItems(reset);
+  try { return await loading; }
+  finally { loading = null; }
+}
+
+function updateAlbumCount() {
+  $("album-count").textContent = `${itemCount}${cursor ? "+" : ""} ${itemCount === 1 ? "recuerdo compartido" : "recuerdos compartidos"}`;
+  $("empty").hidden = itemCount !== 0;
+}
+
+async function renderItems(reset) {
   $("refresh").disabled = true;
   $("load-more").disabled = true;
   try {
@@ -121,8 +227,7 @@ async function loadItems(reset = false) {
     }
     cursor = result.cursor;
     itemCount += result.items.length;
-    $("album-count").textContent = `${itemCount}${cursor ? "+" : ""} ${itemCount === 1 ? "recuerdo compartido" : "recuerdos compartidos"}`;
-    $("empty").hidden = itemCount !== 0;
+    updateAlbumCount();
     $("load-more").hidden = !cursor;
     const tiles = result.items.map(addTile);
     // Limit simultaneous downloads to keep mobile connections responsive.
@@ -134,7 +239,6 @@ async function loadItems(reset = false) {
       }
     }));
   } finally {
-    loading = false;
     $("refresh").disabled = false;
     $("load-more").disabled = false;
   }
@@ -143,6 +247,15 @@ async function loadItems(reset = false) {
 function addTile(item) {
   const card = document.createElement("article");
   card.className = "media-card";
+  card.dataset.id = item.id;
+  card.tabIndex = -1;
+  if (recentlyUploaded.has(item.id)) {
+    card.classList.add("is-new");
+    const badge = document.createElement("span");
+    badge.className = "new-badge";
+    badge.textContent = "Nuevo";
+    card.append(badge);
+  }
   const tile = document.createElement(item.kind === "photo" && item.hasPreview ? "button" : "div");
   tile.className = "media-tile";
   if (tile.tagName === "BUTTON") {
@@ -157,18 +270,22 @@ function addTile(item) {
   if (item.kind === "video") {
     const badge = document.createElement("span");
     badge.className = "media-badge";
-    badge.textContent = "Vídeo guardado";
+    badge.textContent = "Vídeo";
     card.append(badge);
   }
   const caption = document.createElement("p");
   caption.className = "media-caption";
-  caption.textContent = item.guestName || (item.kind === "video" ? "Un recuerdo para después" : "Un día para recordar");
+  caption.textContent = item.guestName || "";
+  caption.hidden = !item.guestName;
   card.append(caption);
   if (role === "admin") {
+    const actions = document.createElement("div");
+    actions.className = "media-actions";
     const download = document.createElement("button");
     download.className = "btn-link download-original";
     download.type = "button";
-    download.textContent = "Descargar original";
+    download.textContent = "Descargar";
+    download.setAttribute("aria-label", `Descargar original de ${item.name}`);
     download.addEventListener("click", async () => {
       download.disabled = true;
       try {
@@ -183,7 +300,18 @@ function addTile(item) {
       } catch (error) { message(error.message, true); }
       finally { download.disabled = false; }
     });
-    card.append(download);
+    const remove = document.createElement("button");
+    remove.className = "btn-link delete-item";
+    remove.type = "button";
+    remove.textContent = "Eliminar";
+    remove.setAttribute("aria-label", `Eliminar ${item.name}`);
+    remove.addEventListener("click", () => {
+      itemToDelete = item;
+      $("delete-file-name").textContent = item.name;
+      $("delete-dialog").showModal();
+    });
+    actions.append(download, remove);
+    card.append(actions);
   }
   $("grid").append(card);
   return tile;
@@ -220,6 +348,14 @@ function mime(file) {
 }
 
 $("files").addEventListener("change", () => {
+  if (!$("files").files.length) return;
+  if (!uploading) {
+    recentlyUploaded.clear();
+    for (let i = queue.length - 1; i >= 0; i--) {
+      if (queue[i].done) { queue[i].row.remove(); queue.splice(i, 1); }
+    }
+  }
+  openUpload();
   for (const file of $("files").files) {
     const type = mime(file);
     const max = type.startsWith("image/") ? settings.maxPhoto : settings.maxVideo;
@@ -238,11 +374,13 @@ $("files").addEventListener("change", () => {
     const item = { file, type, row, status, progress, parts: [], guestName: $("guest-name").value.trim(), ready: true };
     if (!file.size || file.size > max || !/^(image|video)\//.test(type)) {
       item.ready = false;
-      status.textContent = "No se puede subir: formato no compatible o tamaño superior al límite.";
+      item.failed = true;
+      status.textContent = !file.size ? "Este archivo está vacío. Selecciona otra foto o vídeo." : "No se puede subir: formato no compatible o tamaño superior al límite.";
       row.classList.add("has-error");
     } else { status.textContent = "En espera"; }
     $("upload-queue").append(row);
     queue.push(item);
+    if (item.failed) allowDiscard(item);
   }
   $("files").value = "";
   runQueue();
@@ -270,6 +408,7 @@ function uploadPart(item, partNumber, chunk) {
       const percent = Math.min(99, Math.floor(sent / item.file.size * 100));
       item.progress.value = percent;
       item.status.textContent = `Subiendo… ${percent} %`;
+      updateUploadStatus();
     };
     xhr.onload = () => {
       let data;
@@ -285,6 +424,8 @@ function uploadPart(item, partNumber, chunk) {
 async function runQueue() {
   if (uploading || !token) return;
   uploading = true;
+  message("");
+  updateUploadStatus();
   $("logout").disabled = true;
   let wakeLock;
   try { wakeLock = await navigator.wakeLock?.request("screen"); } catch { /* Some browsers cannot keep the screen awake. */ }
@@ -293,8 +434,11 @@ async function runQueue() {
     for (const item of queue) {
       if (!item.ready || item.done) continue;
       item.ready = false;
+      item.failed = false;
       item.row.classList.remove("has-error");
       item.retryButton?.remove();
+      item.discardButton?.remove();
+      item.discardButton = null;
       try {
         if (!item.id) {
           item.status.textContent = "Preparando recuerdo…";
@@ -320,19 +464,25 @@ async function runQueue() {
         item.status.textContent = "Guardando…";
         await retry(() => post(`/api/uploads/${item.id}/complete`, { parts: item.parts }));
         item.done = true;
+        recentlyUploaded.add(item.id);
         item.file = null;
         item.progress.value = 100;
         item.status.textContent = item.noPreview ? "Guardado ✓ · Original conservado, sin portada disponible" : "Guardado ✓";
+        item.row.classList.add("is-done");
+        updateUploadStatus();
         saved++;
       } catch (error) {
+        item.failed = true;
         item.status.textContent = error.message;
         item.row.classList.add("has-error");
         item.retryButton = document.createElement("button");
         item.retryButton.className = "btn-link";
         item.retryButton.type = "button";
         item.retryButton.textContent = "Reintentar";
-        item.retryButton.addEventListener("click", () => { item.ready = true; runQueue(); });
+        item.retryButton.addEventListener("click", () => { item.ready = true; item.failed = false; runQueue(); });
         item.row.append(item.retryButton);
+        allowDiscard(item);
+        updateUploadStatus();
         if (error.status === 401) {
           logout();
           break;
@@ -340,11 +490,16 @@ async function runQueue() {
       }
     }
     if (saved && token) {
-      message("¡Recuerdos guardados! Gracias por compartirlos con nosotros.");
       await loadItems(true).catch((error) => message(`Tus archivos se han guardado. ${error.message}`, true));
     }
   } finally {
     uploading = false;
+    if (token) {
+      updateUploadStatus();
+      if (saved && queue.every((item) => item.done) && $("upload-dialog").open) {
+        await showNewItems().catch((error) => message(error.message, true));
+      }
+    }
     $("logout").disabled = false;
     await wakeLock?.release().catch(() => {});
     if (token && queue.some((item) => item.ready && !item.done)) runQueue();

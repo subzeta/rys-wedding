@@ -143,6 +143,18 @@ async function route(request, env) {
     return Response.json({ items, cursor: listed.truncated ? listed.cursor : null });
   }
 
+  const deleteMatch = path.match(/^\/api\/items\/([^/]+)$/);
+  if (deleteMatch && method === "DELETE") {
+    if (!admin) fail(403, "Solo Raquel y Sergio pueden eliminar recuerdos.");
+    const id = deleteMatch[1];
+    if (!ID.test(id)) fail(400, "Archivo no válido.");
+    const record = await readRecord(env, "entries", id);
+    // Keep the record until file deletion succeeds so a failed deletion can be retried.
+    await env.GALLERY.delete([record.originalKey, `previews/${id}.jpg`, `uploads/${id}.json`]);
+    await env.GALLERY.delete(`entries/${id}.json`);
+    return Response.json({ id });
+  }
+
   const itemMatch = path.match(/^\/api\/items\/([^/]+)\/(preview|original|download)$/);
   if (itemMatch) {
     const [, id, action] = itemMatch;
@@ -245,7 +257,7 @@ export default {
     if (origin && !allowed.includes(origin)) return Response.json({ error: "Origen no permitido." }, { status: 403, headers });
     if (origin) headers.set("Access-Control-Allow-Origin", origin);
     headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
-    headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
+    headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
     let response;
     try {

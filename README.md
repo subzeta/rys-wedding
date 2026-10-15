@@ -1,7 +1,7 @@
 # Raquel & Sergio
 
 La invitación sigue siendo HTML/CSS/JavaScript estático, publicado en GitHub Pages.
-El álbum «Salseo» está en `/rys-wedding/salseo/`. El enlace anterior `/rys-wedding/galeria/` redirige al nuevo álbum. No cambia el formulario de asistencia.
+El álbum «Recuerdos de nuestra boda» está en `/rys-wedding/salseo/`. El enlace anterior `/rys-wedding/galeria/` redirige al nuevo álbum. No cambia el formulario de asistencia.
 
 Producción: `https://subzeta.github.io/rys-wedding/salseo/`.
 API: `https://rys-gallery.subzeta.workers.dev`.
@@ -17,6 +17,8 @@ un archivo privado ignorado por Git. Guarda una copia en tu gestor de contraseñ
 - El código se intercambia por una sesión firmada de 12 horas, guardada solo en la pestaña.
 - El Worker accede a R2 por un binding. No se requieren claves S3 ni Cloudflare Images.
 - Hasta 100 MiB por foto y 1 GiB por vídeo, en bloques de 8 MiB, con dos reintentos automáticos por bloque. Los límites se validan en el servidor.
+- Subidas en una ventana aparte, progreso visible y fotos recién subidas resaltadas en el mosaico.
+- Los administradores pueden eliminar originales y portadas desde cada tarjeta, con confirmación. Los invitados no pueden borrar archivos.
 - Originales solo descargables como administrador. El navegador recibe enlaces de descarga de cinco minutos, limitados a un solo original, para descargarlos sin cargar vídeos completos en memoria.
 
 ## Preparación local

@@ -14,6 +14,9 @@ class MemoryBucket {
     const object = this.objects.get(key);
     return object ? { size: object.data.byteLength } : null;
   }
+  async delete(keys) {
+    for (const key of Array.isArray(keys) ? keys : [keys]) this.objects.delete(key);
+  }
   async get(key) {
     const object = this.objects.get(key);
     if (!object) return null;
@@ -146,6 +149,36 @@ test("only upload owner can write parts; server checks size, type, preview and m
   assert.equal((await create({ type: "image/jpeg", size: 101 * 1024 ** 2 })).status, 413);
   assert.equal((await create({ type: "video/mp4", size: 1024 ** 3 + 1 })).status, 413);
   assert.equal((await create({ type: "image/heic", size: 20 * 1024 ** 2 })).status, 201);
+});
+
+test("only admins can delete a published original, its preview and its upload record", async () => {
+  const { call, login, upload, env } = setup();
+  const guest = await login();
+  const admin = await login("admin");
+  const { id, parts } = await upload(guest);
+  await call(`/api/uploads/${id}/preview`, { token: guest, method: "PUT", raw: new Uint8Array([0xff, 0xd8, 0xff, 0xd9]) });
+  await call(`/api/uploads/${id}/complete`, { token: guest, method: "POST", body: { parts } });
+  const originalCount = env.GALLERY.objects.size;
+  assert.equal((await call(`/api/items/${id}`, { token: guest, method: "DELETE" })).status, 403);
+  assert.equal(env.GALLERY.objects.size, originalCount);
+  assert.equal((await call(`/api/items/${id}`, { method: "DELETE" })).status, 401);
+  assert.equal((await call(`/api/items/${id}`, { token: admin, method: "DELETE" })).status, 200);
+  assert.equal(env.GALLERY.objects.size, 0);
+  assert.equal((await call(`/api/items/${id}/original`, { token: admin })).status, 404);
+});
+
+test("a failed file deletion retains its record so an admin can retry", async () => {
+  const { call, login, upload, env } = setup();
+  const admin = await login("admin");
+  const { id, parts } = await upload(admin);
+  await call(`/api/uploads/${id}/complete`, { token: admin, method: "POST", body: { parts } });
+  const remove = env.GALLERY.delete.bind(env.GALLERY);
+  env.GALLERY.delete = async () => { throw new Error("Storage unavailable"); };
+  assert.equal((await call(`/api/items/${id}`, { token: admin, method: "DELETE" })).status, 500);
+  assert.ok(await env.GALLERY.head(`entries/${id}.json`));
+  env.GALLERY.delete = remove;
+  assert.equal((await call(`/api/items/${id}`, { token: admin, method: "DELETE" })).status, 200);
+  assert.equal(env.GALLERY.objects.size, 0);
 });
 
 test("multipart combines real chunks, validates ordering and preserves originals without a preview", async () => {
