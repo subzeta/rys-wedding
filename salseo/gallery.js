@@ -50,8 +50,17 @@ $("confirm-delete").addEventListener("click", async () => {
   }
 });
 
+function clearCompletedUploads() {
+  for (let i = queue.length - 1; i >= 0; i--) {
+    if (queue[i].done) { queue[i].row.remove(); queue.splice(i, 1); }
+  }
+}
+
 function openUpload() {
-  if (!$("upload-dialog").open) $("upload-dialog").showModal();
+  if (!$("upload-dialog").open) {
+    if (!uploading) clearCompletedUploads();
+    $("upload-dialog").showModal();
+  }
 }
 
 async function showNewItems() {
@@ -369,9 +378,7 @@ $("files").addEventListener("change", () => {
   if (!$("files").files.length) return;
   if (!uploading) {
     recentlyUploaded.clear();
-    for (let i = queue.length - 1; i >= 0; i--) {
-      if (queue[i].done) { queue[i].row.remove(); queue.splice(i, 1); }
-    }
+    clearCompletedUploads();
   }
   openUpload();
   for (const file of $("files").files) {
