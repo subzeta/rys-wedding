@@ -29,9 +29,9 @@
       <section id="login-section" class="card login-card" aria-labelledby="login-title">
         <h2 id="login-title">Un álbum entre todos</h2>
         <p>Introduce el código que os hemos compartido para entrar.</p>
-        <form id="login-form">
+        <form id="login-form" autocomplete="off">
           <label for="access-code">Código de acceso</label>
-          <input id="access-code" type="password" autocomplete="current-password" required maxlength="200" />
+          <input id="access-code" type="text" autocomplete="one-time-code" autocapitalize="none" autocorrect="off" spellcheck="false" required maxlength="200" />
           <button class="btn" type="submit">Entrar al álbum</button>
         </form>
         <button class="btn-link admin-toggle" id="admin-toggle" type="button">Acceso de Raquel y Sergio</button>
