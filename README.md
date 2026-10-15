@@ -14,6 +14,7 @@ un archivo privado ignorado por Git. Guarda una copia en tu gestor de contraseñ
 - Copias JPEG de hasta 1600 píxeles y 500 KB para mostrar las fotos y portadas.
 - Los vídeos no se reproducen ni se descargan con el acceso de invitados.
 - Código compartido para invitados y otro código privado para los administradores.
+- Ambos códigos ignoran mayúsculas/minúsculas y espacios al principio o al final.
 - El código se intercambia por una sesión firmada de 12 horas, guardada solo en la pestaña.
 - El Worker accede a R2 por un binding. No se requieren claves S3 ni Cloudflare Images.
 - Hasta 100 MiB por foto y 1 GiB por vídeo, en bloques de 8 MiB, con dos reintentos automáticos por bloque. Los límites se validan en el servidor.

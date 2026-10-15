@@ -107,6 +107,20 @@ test("sessions reject wrong codes, tampered tokens and foreign origins", async (
   assert.equal((await call("/api/session", { method: "POST", body: { role: "admin", code: "simple" } })).status, 401);
 });
 
+test("access codes ignore letter case and surrounding spaces without mixing guest and admin access", async () => {
+  const { call, env } = setup();
+  for (const [role, code] of [["guest", "  GuEsT-TEST-Code  "], ["admin", "  PRIVATE-admin-TEST-code  "]]) {
+    const response = await call("/api/session", { method: "POST", body: { role, code } });
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).role, role);
+  }
+  assert.equal((await call("/api/session", { method: "POST", body: { role: "admin", code: env.GUEST_CODE.toUpperCase() } })).status, 401);
+  assert.equal((await call("/api/session", { method: "POST", body: { role: "guest", code: "wrong-test-code" } })).status, 401);
+  env.GUEST_CODE = "Shared-test-access";
+  env.ADMIN_CODE = " SHARED-TEST-ACCESS ";
+  assert.equal((await call("/api/session", { method: "POST", body: { role: "guest", code: env.GUEST_CODE } })).status, 503);
+});
+
 test("incomplete files stay private; completion is idempotent; guests cannot fetch video originals", async () => {
   const { call, login, upload } = setup();
   const guest = await login();
