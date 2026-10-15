@@ -110,7 +110,7 @@ async function route(request, env) {
   const path = url.pathname;
   const method = request.method;
   if (path === "/api/session" && method === "POST") {
-    if (!env.GUEST_CODE || env.GUEST_CODE.length < 8 || !env.ADMIN_CODE || env.ADMIN_CODE.length < 16 || env.GUEST_CODE === env.ADMIN_CODE || !env.SESSION_SECRET || env.SESSION_SECRET.length < 32) {
+    if (!env.GUEST_CODE || env.GUEST_CODE.length < 6 || !env.ADMIN_CODE || env.ADMIN_CODE.length < 16 || env.GUEST_CODE === env.ADMIN_CODE || !env.SESSION_SECRET || env.SESSION_SECRET.length < 32) {
       fail(503, "La galería todavía no está configurada.");
     }
     await limit(env.LOGIN_LIMIT, `login:${request.headers.get("CF-Connecting-IP") || "local"}`);

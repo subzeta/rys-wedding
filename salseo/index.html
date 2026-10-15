@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob:; media-src blob:; connect-src 'self' https://*.workers.dev http://127.0.0.1:8787; object-src 'none'; base-uri 'none'; form-action 'self'" />
+    <title>Salseo · Raquel & Sergio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <link rel="stylesheet" href="gallery.css" />
+    <script type="module" src="gallery.js"></script>
+  </head>
+  <body>
+    <header class="gallery-header">
+      <a class="wedding-link" href="../">Raquel <span>&</span> Sergio</a>
+      <span class="date">24 · 10 · 2026</span>
+    </header>
+    <main class="gallery-main">
+      <section class="intro">
+        <p class="eyebrow">Nuestro día, desde vuestros ojos</p>
+        <h1>Salseo<span>.</span></h1>
+        <p class="lead">Las risas, los abrazos, ese baile… Compartid aquí las fotos y vídeos que habéis hecho. Nos encantará guardarlos.</p>
+      </section>
+
+      <section id="login-section" class="card login-card" aria-labelledby="login-title">
+        <h2 id="login-title">Un álbum entre todos</h2>
+        <p>Introduce el código que os hemos compartido para entrar.</p>
+        <form id="login-form">
+          <label for="access-code">Código de acceso</label>
+          <input id="access-code" type="password" autocomplete="current-password" required maxlength="200" />
+          <button class="btn" type="submit">Entrar al álbum</button>
+        </form>
+        <button class="btn-link admin-toggle" id="admin-toggle" type="button">Acceso de Raquel y Sergio</button>
+      </section>
+
+      <section id="album" hidden aria-label="Álbum compartido">
+        <div class="album-toolbar">
+          <div><h2>Nuestro álbum</h2><p id="album-count">Cargando recuerdos…</p></div>
+          <button class="btn-link" id="logout" type="button">Salir</button>
+        </div>
+        <section class="card upload-card" aria-labelledby="upload-title">
+          <div>
+            <h3 id="upload-title">¿Qué momentos has capturado?</h3>
+            <p>Las fotos se podrán ver aquí. De los vídeos solo aparecerá una portada: los guardaremos para disfrutarlos después.</p>
+          </div>
+          <label for="guest-name">Tu nombre <span class="optional">(opcional)</span></label>
+          <input id="guest-name" type="text" autocomplete="name" maxlength="80" placeholder="Para saber de quién es cada recuerdo" />
+          <label class="btn file-picker" id="file-picker">
+            <span>＋ Añadir fotos y vídeos</span>
+            <input id="files" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/avif,video/mp4,video/quicktime,video/webm,video/3gpp,video/x-m4v,.heic,.heif,.mov,.m4v" multiple />
+          </label>
+          <p class="upload-hint">Hasta 100 MB por foto y 1 GB por vídeo. Mantén esta página abierta mientras se suben.</p>
+          <p id="uploads-closed" hidden>Ya hemos cerrado la recogida. ¡Gracias por todos los recuerdos!</p>
+          <ul id="upload-queue" aria-label="Estado de las subidas"></ul>
+        </section>
+        <aside id="admin-tools" class="admin-note" hidden>
+          <strong>Acceso privado</strong>
+          <p>Puedes descargar cada original desde su tarjeta. Para llevarte todo el álbum de una vez, utiliza el exportador incluido en el proyecto.</p>
+        </aside>
+        <div class="view-toolbar">
+          <p>Pequeños momentos, grandes recuerdos.</p>
+          <button class="btn-link" id="refresh" type="button">Actualizar álbum</button>
+        </div>
+        <div id="grid" class="photo-grid"></div>
+        <div id="empty" class="empty-state" hidden><span aria-hidden="true">♡</span><h3>El primer recuerdo puede ser el tuyo</h3><p>Añade tus fotos y vídeos para empezar nuestro álbum.</p></div>
+        <button id="load-more" class="btn btn-secondary" type="button" hidden>Ver más recuerdos</button>
+      </section>
+      <p id="message" class="message" role="status" aria-live="polite"></p>
+      <noscript><p>Activa JavaScript para entrar en el álbum y compartir tus recuerdos.</p></noscript>
+    </main>
+    <footer class="gallery-footer">Gracias por vivir este día con nosotros. <span>R & S</span></footer>
+    <dialog id="viewer" aria-label="Foto ampliada">
+      <button id="close-viewer" class="btn btn-secondary" type="button" aria-label="Cerrar foto">Cerrar ✕</button>
+      <img id="viewer-image" alt="" />
+      <p id="viewer-caption"></p>
+    </dialog>
+  </body>
+</html>

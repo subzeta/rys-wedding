@@ -1,9 +1,9 @@
 # Raquel & Sergio
 
 La invitación sigue siendo HTML/CSS/JavaScript estático, publicado en GitHub Pages.
-El álbum «El carrete del delito» está en `/rys-wedding/el-carrete-del-delito/`. El enlace anterior `/rys-wedding/galeria/` redirige al nuevo álbum. No cambia el formulario de asistencia.
+El álbum «Salseo» está en `/rys-wedding/salseo/`. El enlace anterior `/rys-wedding/galeria/` redirige al nuevo álbum. No cambia el formulario de asistencia.
 
-Producción: `https://subzeta.github.io/rys-wedding/el-carrete-del-delito/`.
+Producción: `https://subzeta.github.io/rys-wedding/salseo/`.
 API: `https://rys-gallery.subzeta.workers.dev`.
 Los códigos y el secreto de sesión se conservan en `.env.gallery-production.local`,
 un archivo privado ignorado por Git. Guarda una copia en tu gestor de contraseñas.
@@ -29,7 +29,7 @@ cp gallery-worker/.dev.vars.example gallery-worker/.dev.vars
 npm run gallery:dev
 ```
 
-Pon códigos de prueba en `.dev.vars` (mínimo 8 caracteres para invitados, 16 para administrador, distintos entre sí) y un secreto de sesión aleatorio de al menos 32 caracteres. El archivo está ignorado por Git. Ninguna credencial debe estar en `el-carrete-del-delito/config.js`.
+Pon códigos de prueba en `.dev.vars` (mínimo 6 caracteres para invitados, 16 para administrador, distintos entre sí) y un secreto de sesión aleatorio de al menos 32 caracteres. El archivo está ignorado por Git. Ninguna credencial debe estar en `salseo/config.js`.
 
 En otra terminal:
 
@@ -37,7 +37,7 @@ En otra terminal:
 python3 -m http.server 8080 --bind 127.0.0.1
 ```
 
-Abre `http://127.0.0.1:8080/el-carrete-del-delito/`. En local la galería usa automáticamente el Worker en `http://127.0.0.1:8787`. R2 se emula en disco; no sube archivos a Cloudflare.
+Abre `http://127.0.0.1:8080/salseo/`. En local la galería usa automáticamente el Worker en `http://127.0.0.1:8787`. R2 se emula en disco; no sube archivos a Cloudflare.
 
 ## Conectar con Cloudflare y publicar
 
@@ -64,7 +64,7 @@ Abre `http://127.0.0.1:8080/el-carrete-del-delito/`. En local la galería usa au
    npx wrangler secret put SESSION_SECRET --config gallery-worker/wrangler.jsonc
    ```
 
-   El código de invitados debe tener al menos 8 caracteres y el privado 16. Para `SESSION_SECRET`, genera y guarda una cadena aleatoria de al menos 32 caracteres (por ejemplo, desde tu gestor de contraseñas). No compartas el código privado en el QR. Cambiar `SESSION_SECRET` invalida todas las sesiones abiertas.
+   El código de invitados debe tener al menos 6 caracteres y el privado 16. Para `SESSION_SECRET`, genera y guarda una cadena aleatoria de al menos 32 caracteres (por ejemplo, desde tu gestor de contraseñas). No compartas el código privado en el QR. Cambiar `SESSION_SECRET` invalida todas las sesiones abiertas.
 
 5. Revisa los dominios permitidos en `ALLOWED_ORIGINS`. Para producción puedes dejar solo `https://subzeta.github.io`. Los namespaces de los dos limitadores deben ser únicos en tu cuenta. El de login permite 30 intentos/minuto por IP; el de nuevas subidas, 20/minuto por sesión. Son límites locales por centro de datos, no un tope de gasto global.
 6. Despliega:
@@ -73,8 +73,8 @@ Abre `http://127.0.0.1:8080/el-carrete-del-delito/`. En local la galería usa au
    npm run gallery:deploy
    ```
 
-7. Copia la URL HTTPS que devuelve Wrangler en `API_URL` de `el-carrete-del-delito/config.js`. Es pública y **no es un token**. Si usas un dominio propio para el Worker, añádelo también al `connect-src` de la política CSP en `el-carrete-del-delito/index.html`.
-8. Publica los cambios de la web por el proceso habitual de GitHub Pages. La URL será `https://subzeta.github.io/rys-wedding/el-carrete-del-delito/` y puedes convertirla en un QR desde el navegador.
+7. Copia la URL HTTPS que devuelve Wrangler en `API_URL` de `salseo/config.js`. Es pública y **no es un token**. Si usas un dominio propio para el Worker, añádelo también al `connect-src` de la política CSP en `salseo/index.html`.
+8. Publica los cambios de la web por el proceso habitual de GitHub Pages. La URL será `https://subzeta.github.io/rys-wedding/salseo/` y puedes convertirla en un QR desde el navegador.
 
 No hace falta un token de Cloudflare Images ni usar la suscripción de Images para esta implementación. Si prefieres automatizar el despliegue en el futuro, configura un token limitado como secreto de CI; nunca en la web.
 

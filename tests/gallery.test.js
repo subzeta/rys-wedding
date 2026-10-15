@@ -99,6 +99,9 @@ test("sessions reject wrong codes, tampered tokens and foreign origins", async (
   assert.equal(allowed.headers.get("Access-Control-Allow-Origin"), "https://subzeta.github.io");
   assert.equal(allowed.headers.get("Cache-Control"), "no-store");
   assert.equal(allowed.headers.get("X-Content-Type-Options"), "nosniff");
+  env.GUEST_CODE = "simple";
+  assert.equal((await call("/api/session", { method: "POST", body: { role: "guest", code: "simple" } })).status, 200);
+  assert.equal((await call("/api/session", { method: "POST", body: { role: "admin", code: "simple" } })).status, 401);
 });
 
 test("incomplete files stay private; completion is idempotent; guests cannot fetch video originals", async () => {
