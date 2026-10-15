@@ -1,0 +1,18 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "rys-gallery",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-15",
+  "workers_dev": true,
+  "r2_buckets": [
+    { "binding": "GALLERY", "bucket_name": "rys-wedding-gallery" }
+  ],
+  "vars": {
+    "ALLOWED_ORIGINS": "https://subzeta.github.io,http://localhost:8080,http://127.0.0.1:8080",
+    "UPLOADS_ENABLED": "true"
+  },
+  "ratelimits": [
+    { "name": "LOGIN_LIMIT", "namespace_id": "24012026", "simple": { "limit": 30, "period": 60 } },
+    { "name": "UPLOAD_LIMIT", "namespace_id": "24022026", "simple": { "limit": 20, "period": 60 } }
+  ]
+}

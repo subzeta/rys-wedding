@@ -1,0 +1,83 @@
+[hidden] { display: none !important; }
+body { background: #faf7fc; }
+button, input { font: inherit; }
+button:focus-visible, a:focus-visible, .file-picker:focus-within { outline: 3px solid var(--accent-dark); outline-offset: 4px; }
+button:disabled { opacity: .6; cursor: wait; }
+.gallery-header, .gallery-main, .gallery-footer { width: min(1120px, 92vw); margin-inline: auto; }
+.gallery-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding-block: 1.6rem; border-bottom: 1px solid var(--line); }
+.wedding-link { color: var(--ink); text-decoration: none; font-family: "Playfair Display", serif; font-size: 1.25rem; }
+.wedding-link span { color: var(--accent-dark); }
+.date { color: var(--muted); font-size: .78rem; letter-spacing: .12em; }
+.gallery-main { display: block; padding-bottom: 2rem; }
+.intro { text-align: center; padding: 3.5rem 0 2.5rem; }
+.intro h1 { font-size: clamp(2.5rem, 6vw, 4.5rem); line-height: 1.13; margin-bottom: 1.4rem; }
+.intro .lead { max-width: 58ch; }
+.eyebrow { font-size: .7rem; }
+.login-card { max-width: 460px; margin: 0 auto; padding: 1.8rem; }
+.login-card h2 { font-size: 1.65rem; }
+.login-card p, .upload-card p { color: var(--muted); }
+#login-form { display: grid; gap: .6rem; }
+#access-code { padding: .8rem; border: 1px solid var(--line); border-radius: 12px; width: 100%; background: #fff; }
+#login-form .btn { margin-top: .5rem; }
+.admin-toggle { margin-top: 1.2rem; padding: 0; font-size: .8rem; }
+.album-toolbar, .view-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-block: 1.5rem; }
+.album-toolbar p { margin: .25rem 0 0; color: var(--muted); font-size: .85rem; }
+.upload-card { padding: 1.5rem; box-shadow: none; background: #f1e8f8; }
+.upload-card h3 { font-size: 1.4rem; }
+.upload-card p { margin-top: .4rem; max-width: 75ch; }
+.upload-card label:not(.file-picker) { display: block; font-size: .85rem; }
+.optional { font-weight: 400; }
+#guest-name { max-width: 440px; display: block; margin-bottom: 1rem; }
+.file-picker { position: relative; overflow: hidden; }
+.file-picker input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.upload-hint { font-size: .75rem; margin-bottom: 0; }
+#upload-queue { padding: 0; margin: 1rem 0 0; list-style: none; display: grid; gap: .6rem; }
+.upload-row { display: flex; align-items: center; gap: .8rem; background: #fff; padding: .8rem; border-radius: 12px; }
+.upload-row > div { flex: 1; min-width: 0; }
+.upload-row strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .85rem; }
+.upload-row small { display: block; color: var(--muted); }
+.upload-row progress { width: 100%; height: 6px; accent-color: var(--accent-dark); }
+.upload-row.has-error { border: 1px solid #c4626c; }
+.admin-note { margin-top: 1rem; padding: 1rem; border: 1px dashed var(--accent); border-radius: 12px; }
+.admin-note p { margin-bottom: 0; font-size: .85rem; }
+.view-toolbar p { color: var(--muted); font-size: .85rem; }
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.media-card { position: relative; min-width: 0; background: #eee5f5; border-radius: 12px; overflow: hidden; }
+.media-tile { width: 100%; padding: 0; border: 0; background: transparent; color: var(--muted); display: grid; place-content: center; position: relative; aspect-ratio: 1; }
+button.media-tile { cursor: zoom-in; display: block; }
+.media-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.placeholder { font-size: 2.5rem; display: block; text-align: center; }
+.placeholder-label { font-size: .8rem; text-align: center; }
+.media-badge { position: absolute; top: .6rem; left: .6rem; color: #fff; background: #32273dcc; padding: .2rem .5rem; border-radius: 6px; font-size: .7rem; pointer-events: none; }
+.media-caption { font-size: .75rem; padding: .5rem .6rem; margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.download-original { font-size: .75rem; margin: 0 .5rem .7rem; padding: 0; }
+.empty-state { padding: 3rem 1rem; text-align: center; border: 1px dashed var(--line); border-radius: 16px; }
+.empty-state > span { color: var(--accent); font-size: 3rem; }
+.empty-state p { color: var(--muted); }
+#load-more { display: block; margin: 1.5rem auto 0; }
+.message { text-align: center; color: var(--accent-dark); margin: 1.2rem auto; max-width: 65ch; }
+.message.error { color: #9b283b; }
+.gallery-footer { text-align: center; padding-block: 2rem; font-size: .8rem; border-top: 1px solid var(--line); }
+.gallery-footer span { display: block; font-family: "Playfair Display", serif; font-size: 1.5rem; margin-top: .6rem; color: var(--accent-dark); }
+#viewer { max-width: min(95vw, 1200px); max-height: 95dvh; border: 0; border-radius: 16px; padding: 1rem; background: #faf7fc; }
+#viewer::backdrop { background: #20182be6; }
+#viewer-image { display: block; max-width: 100%; max-height: 75dvh; margin: .8rem auto; object-fit: contain; }
+#viewer-caption { text-align: center; margin-bottom: 0; }
+#close-viewer { display: block; margin-left: auto; width: auto; }
+@media (max-width: 600px) {
+  .intro { padding-block: 2.5rem 1.5rem; }
+  .date { font-size: .65rem; letter-spacing: .05em; }
+  .wedding-link { font-size: 1.1rem; }
+  .photo-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+  .media-card { border-radius: 6px; }
+  .media-badge { top: .25rem; left: .25rem; font-size: .6rem; }
+  .view-toolbar { align-items: baseline; }
+  .view-toolbar p { max-width: 24ch; }
+  .upload-card { padding: 1rem; }
+  .file-picker { width: 100%; text-align: center; }
+  .media-caption { font-size: .65rem; padding: .35rem; }
+  .download-original { font-size: .65rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

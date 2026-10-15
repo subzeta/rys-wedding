@@ -1,0 +1,14 @@
+{
+  "name": "rys-wedding",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "gallery:dev": "wrangler dev --config gallery-worker/wrangler.jsonc",
+    "gallery:deploy": "wrangler deploy --config gallery-worker/wrangler.jsonc",
+    "gallery:check": "wrangler deploy --dry-run --config gallery-worker/wrangler.jsonc"
+  },
+  "devDependencies": {
+    "wrangler": "4.151.0"
+  }
+}
