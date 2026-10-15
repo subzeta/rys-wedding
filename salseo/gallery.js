@@ -15,6 +15,17 @@ const previewURLs = new Set();
 const recentlyUploaded = new Set();
 let itemToDelete = null;
 let deleting = false;
+const toastTimers = new Map();
+
+function dismissLater(element, enabled = true) {
+  clearTimeout(toastTimers.get(element));
+  if (!enabled) return;
+  toastTimers.set(element, setTimeout(() => {
+    // Leave actions available while someone is reading or using the toast.
+    if (element.matches(":hover, :focus-within")) dismissLater(element);
+    else element.hidden = true;
+  }, 5000));
+}
 
 $("cancel-delete").addEventListener("click", () => $("delete-dialog").close());
 $("delete-dialog").addEventListener("cancel", (event) => { if (deleting) event.preventDefault(); });
@@ -52,7 +63,11 @@ async function showNewItems() {
 }
 
 function updateUploadStatus() {
-  if (!queue.length || !token) { $("upload-status").hidden = true; return; }
+  if (!queue.length || !token) {
+    dismissLater($("upload-status"), false);
+    $("upload-status").hidden = true;
+    return;
+  }
   const done = queue.filter((item) => item.done).length;
   const failed = queue.filter((item) => item.failed).length;
   const total = queue.length;
@@ -74,6 +89,7 @@ function updateUploadStatus() {
   $("upload-total-progress").hidden = !active;
   $("dismiss-upload-status").hidden = active;
   $("upload-status-action").textContent = active ? "Ver progreso" : failed ? "Revisar subidas" : "Ver mis recuerdos";
+  dismissLater($("upload-status"), !active);
 }
 
 function allowDiscard(item) {
@@ -100,9 +116,11 @@ $("upload-status-action").addEventListener("click", () => {
   else showNewItems().catch((error) => message(error.message, true));
 });
 
-function message(text, error = false) {
+function message(text, error = false, persistent = false) {
   $("message").textContent = text;
   $("message").classList.toggle("error", error);
+  $("message").hidden = !text;
+  dismissLater($("message"), Boolean(text) && !persistent);
 }
 
 async function api(path, options = {}) {
@@ -164,7 +182,7 @@ $("login-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const button = event.submitter;
   button.disabled = true;
-  message("Entrando…");
+  message("Entrando…", false, true);
   try {
     const result = await post("/api/session", { code: $("access-code").value, role: loginRole });
     token = result.token;

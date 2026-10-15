@@ -1,7 +1,9 @@
 [hidden] { display: none !important; }
 body { background: #fff; }
 button, input { font: inherit; }
-button:focus-visible, a:focus-visible, .file-picker:focus-within { outline: 3px solid var(--accent-dark); outline-offset: 4px; }
+button:focus, a:focus, .media-card:focus { outline: none; }
+button:focus-visible, a:focus-visible, .btn:focus-visible, .icon-button:focus-visible, .btn-link:focus-visible, .media-card:focus-visible, .file-picker:has(input:focus-visible) { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--accent-dark); }
+button.media-tile:focus-visible { outline: 2px solid var(--accent-dark); outline-offset: -4px; }
 button:disabled { opacity: .6; cursor: wait; }
 .gallery-header, .gallery-main, .gallery-footer { width: min(1240px, 94vw); margin-inline: auto; }
 .gallery-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding-block: 1.3rem; border-bottom: 1px solid #f0eaf4; }
@@ -35,8 +37,6 @@ button:disabled { opacity: .6; cursor: wait; }
 .album-note { color: var(--muted); font-size: .8rem; margin-block: 1rem; }
 .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 5px; }
 .media-card { position: relative; min-width: 0; background: #f0eaf5; border-radius: 6px; overflow: hidden; scroll-margin-block: 130px; }
-.media-card.is-new { outline: 3px solid var(--accent); outline-offset: -3px; }
-.media-card:focus { outline: 3px solid var(--accent-dark); outline-offset: 2px; }
 .media-tile { width: 100%; padding: 0; border: 0; background: #f2edf7; color: var(--muted); display: grid; place-content: center; position: relative; aspect-ratio: 1; }
 button.media-tile { cursor: zoom-in; display: block; }
 .media-tile img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .25s ease; }
