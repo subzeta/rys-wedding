@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="../styles.css" />
-    <link rel="stylesheet" href="gallery.css?v=20261027-4" />
-    <script type="module" src="gallery.js?v=20261027-4"></script>
+    <link rel="stylesheet" href="gallery.css?v=20261027-5" />
+    <script type="module" src="gallery.js?v=20261027-5"></script>
   </head>
   <body>
     <header class="gallery-header">
@@ -114,9 +114,17 @@
       </div>
     </dialog>
     <dialog id="viewer" aria-label="Foto ampliada">
-      <button id="close-viewer" class="btn btn-secondary" type="button" aria-label="Cerrar foto">Cerrar ✕</button>
-      <img id="viewer-image" alt="" />
+      <div class="viewer-heading">
+        <span id="viewer-position" aria-live="polite" aria-atomic="true"></span>
+        <button id="close-viewer" class="icon-button" type="button" aria-label="Cerrar foto">✕</button>
+      </div>
+      <div class="viewer-stage">
+        <img id="viewer-image" alt="" />
+        <button id="previous-photo" class="viewer-arrow" type="button" aria-label="Foto anterior">‹</button>
+        <button id="next-photo" class="viewer-arrow" type="button" aria-label="Foto siguiente">›</button>
+      </div>
       <p id="viewer-caption"></p>
+      <p id="viewer-status" role="status"></p>
     </dialog>
   </body>
 </html>

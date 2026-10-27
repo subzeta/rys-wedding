@@ -19,6 +19,8 @@ let deleting = false;
 const toastTimers = new Map();
 const selected = new Set();
 let preparingDownload = false;
+let viewedTile = null;
+let viewerBusy = false;
 
 function updateSelection() {
   $("download-selected").textContent = `Descargar selección (${selected.size})`;
@@ -260,6 +262,60 @@ $("load-more").addEventListener("click", () => loadItems().catch((error) => mess
 $("close-viewer").addEventListener("click", () => $("viewer").close());
 $("viewer").addEventListener("click", (event) => { if (event.target === $("viewer")) $("viewer").close(); });
 
+function viewerPhotos() {
+  return [...$("grid").querySelectorAll("button.media-tile img")].map((img) => img.parentElement);
+}
+
+function updateViewerNavigation() {
+  const photos = viewerPhotos();
+  const index = photos.indexOf(viewedTile);
+  $("previous-photo").disabled = viewerBusy || index <= 0;
+  $("next-photo").disabled = viewerBusy || (index === photos.length - 1 && !cursor);
+  $("viewer-position").textContent = `${index + 1} / ${photos.length}${cursor ? "+" : ""}`;
+}
+
+function showPhoto(tile) {
+  viewedTile = tile;
+  const img = tile.querySelector("img");
+  $("viewer-image").src = img.src;
+  $("viewer-image").alt = img.alt;
+  $("viewer-caption").textContent = tile.querySelector(".media-caption").textContent || "Raquel & Sergio · 24 de octubre de 2026";
+  $("viewer-status").textContent = "";
+  updateViewerNavigation();
+  if (!$("viewer").open) $("viewer").showModal();
+}
+
+async function movePhoto(direction) {
+  if (!viewedTile || viewerBusy) return;
+  viewerBusy = true;
+  updateViewerNavigation();
+  const current = viewedTile;
+  try {
+    let photos = viewerPhotos();
+    while (direction > 0 && photos.indexOf(current) === photos.length - 1 && cursor) {
+      $("viewer-status").textContent = "Cargando más fotos…";
+      await loadItems();
+      if (!$("viewer").open || viewedTile !== current) return;
+      photos = viewerPhotos();
+    }
+    const next = photos[photos.indexOf(current) + direction];
+    $("viewer-status").textContent = "";
+    if (next) showPhoto(next);
+  } catch (error) { $("viewer-status").textContent = error.message; }
+  finally { viewerBusy = false; updateViewerNavigation(); }
+}
+
+$("previous-photo").addEventListener("click", () => movePhoto(-1));
+$("next-photo").addEventListener("click", () => movePhoto(1));
+$("viewer").addEventListener("close", () => { viewedTile = null; });
+document.addEventListener("keydown", (event) => {
+  if (!$("viewer").open) return;
+  if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+    event.preventDefault();
+    movePhoto(event.key === "ArrowLeft" ? -1 : 1);
+  }
+});
+
 async function loadItems(reset = false) {
   if (loading) {
     await loading;
@@ -351,12 +407,16 @@ function addTile(item) {
       if (checkbox.checked) selected.add(item.id); else selected.delete(item.id);
       updateSelection();
     });
-    selection.append(checkbox, document.createTextNode("Seleccionar"));
+    selection.title = "Seleccionar para descargar";
+    const check = document.createElement("span");
+    check.setAttribute("aria-hidden", "true");
+    check.textContent = "✓";
+    selection.append(checkbox, check);
     card.append(selection);
     const actions = document.createElement("div");
     actions.className = "media-actions";
     const download = document.createElement("button");
-    download.className = "btn-link download-original";
+    download.className = "download-original";
     download.type = "button";
     download.textContent = "Descargar";
     download.setAttribute("aria-label", `Descargar original de ${item.name}`);
@@ -399,12 +459,8 @@ async function loadPreview(item, tile) {
     img.alt = item.kind === "video" ? "Portada del vídeo. Sin reproducción." : (item.guestName ? `Foto de ${item.guestName}` : "Foto de nuestra boda");
     img.loading = "lazy";
     tile.querySelector(".placeholder").replaceWith(img);
-    if (item.kind === "photo") tile.addEventListener("click", () => {
-      $("viewer-image").src = url;
-      $("viewer-image").alt = img.alt;
-      $("viewer-caption").textContent = item.guestName || "Raquel & Sergio · 24 de octubre de 2026";
-      $("viewer").showModal();
-    });
+    if (item.kind === "photo") tile.addEventListener("click", () => showPhoto(tile));
+    if ($("viewer").open) updateViewerNavigation();
   } catch (error) {
     if (error.status !== 401) message("Alguna portada no ha cargado. Puedes pulsar «Actualizar álbum» para volver a intentarlo.", true);
   }
