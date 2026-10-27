@@ -135,3 +135,12 @@ body:has(dialog[open]) { overflow: hidden; }
 .delete-actions { display: flex; justify-content: flex-end; gap: .6rem; flex-wrap: wrap; margin-top: 1.5rem; }
 .delete-actions .btn { font-size: .8rem; box-shadow: none; }
 .btn-danger { background: #a93243; }
+
+.bulk-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-top: .8rem; }
+.bulk-actions .btn { font-size: .8rem; padding: .7rem 1rem; box-shadow: none; }
+.select-item { display: flex; align-items: center; gap: .4rem; padding: .5rem; background: #fff; font-size: .75rem; cursor: pointer; }
+.select-item input { width: 20px; height: 20px; accent-color: var(--accent-dark); }
+.media-card:has(.select-item input:checked) { outline: 3px solid var(--accent-dark); outline-offset: -3px; }
+.media-card:has(.select-item) .media-caption { bottom: 80px; }
+#download-links { padding-left: 1.3rem; max-height: 35dvh; overflow: auto; }
+#download-links a { display: inline-block; padding-block: .5rem; overflow-wrap: anywhere; }

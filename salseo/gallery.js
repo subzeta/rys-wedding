@@ -1,4 +1,5 @@
 import { API_URL } from "./config.js";
+import { prepareDownloads, cancelDownloads } from "./downloads.js";
 
 const $ = (id) => document.getElementById(id);
 const base = API_URL.replace(/\/$/, "");
@@ -16,6 +17,45 @@ const recentlyUploaded = new Set();
 let itemToDelete = null;
 let deleting = false;
 const toastTimers = new Map();
+const selected = new Set();
+let preparingDownload = false;
+
+function updateSelection() {
+  $("download-selected").textContent = `Descargar selección (${selected.size})`;
+  $("download-selected").disabled = preparingDownload || !selected.size;
+  $("download-all").disabled = preparingDownload || !itemCount;
+  $("clear-selection").hidden = !selected.size;
+}
+
+function startDownload(url, name) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.referrerPolicy = "no-referrer";
+  document.body.append(link);
+  link.click();
+  link.remove();
+}
+
+async function downloadMultiple(all) {
+  if (preparingDownload) return;
+  preparingDownload = true;
+  updateSelection();
+  $("download-dialog").showModal();
+  try {
+    await prepareDownloads({ api, post, selected: all ? null : [...selected], startDownload });
+  } finally { preparingDownload = false; updateSelection(); }
+}
+
+$("close-download").addEventListener("click", () => $("download-dialog").close());
+$("download-dialog").addEventListener("close", cancelDownloads);
+$("download-selected").addEventListener("click", () => downloadMultiple(false));
+$("download-all").addEventListener("click", () => downloadMultiple(true));
+$("clear-selection").addEventListener("click", () => {
+  selected.clear();
+  document.querySelectorAll(".select-item input").forEach((input) => { input.checked = false; });
+  updateSelection();
+});
 
 function dismissLater(element, enabled = true) {
   clearTimeout(toastTimers.get(element));
@@ -159,6 +199,9 @@ function releasePreviews() {
 }
 
 function logout() {
+  $("download-dialog").close();
+  selected.clear();
+  $("download-status").textContent = "";
   token = "";
   sessionStorage.removeItem("gallery-session");
   $("viewer").close();
@@ -239,6 +282,7 @@ async function loadItems(reset = false) {
 function updateAlbumCount() {
   $("album-count").textContent = `${itemCount}${cursor ? "+" : ""} ${itemCount === 1 ? "recuerdo compartido" : "recuerdos compartidos"}`;
   $("empty").hidden = itemCount !== 0;
+  updateSelection();
 }
 
 async function renderItems(reset) {
@@ -251,6 +295,7 @@ async function renderItems(reset) {
       $("grid").replaceChildren();
       releasePreviews();
       itemCount = 0;
+      selected.clear();
     }
     cursor = result.cursor;
     itemCount += result.items.length;
@@ -305,7 +350,18 @@ function addTile(item) {
   caption.textContent = item.guestName || "";
   caption.hidden = !item.guestName;
   card.append(caption);
-  if (role === "admin") {
+  {
+    const selection = document.createElement("label");
+    selection.className = "select-item";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.setAttribute("aria-label", `Seleccionar ${item.name} para descargar`);
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) selected.add(item.id); else selected.delete(item.id);
+      updateSelection();
+    });
+    selection.append(checkbox, document.createTextNode("Seleccionar"));
+    card.append(selection);
     const actions = document.createElement("div");
     actions.className = "media-actions";
     const download = document.createElement("button");
@@ -317,13 +373,7 @@ function addTile(item) {
       download.disabled = true;
       try {
         const result = await post(`/api/items/${item.id}/download`, {});
-        const link = document.createElement("a");
-        link.href = result.url;
-        link.download = item.name;
-        link.referrerPolicy = "no-referrer";
-        document.body.append(link);
-        link.click();
-        link.remove();
+        startDownload(result.url, item.name);
       } catch (error) { message(error.message, true); }
       finally { download.disabled = false; }
     });
@@ -337,7 +387,8 @@ function addTile(item) {
       $("delete-file-name").textContent = item.name;
       $("delete-dialog").showModal();
     });
-    actions.append(download, remove);
+    actions.append(download);
+    if (role === "admin") actions.append(remove);
     card.append(actions);
   }
   $("grid").append(card);
@@ -543,11 +594,15 @@ async function makePreview(file, type) {
     }
     await new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error("No se pudo crear la portada.")), 20000);
-      const finish = (action) => { clearTimeout(timer); media.onerror = media.onload = media.onloadeddata = media.onseeked = null; action(); };
+      const finish = (action) => { clearTimeout(timer); media.onerror = media.onload = media.onloadedmetadata = media.onloadeddata = media.onseeked = null; action(); };
       media.onerror = () => finish(() => reject(new Error("Formato sin vista previa.")));
       if (video) {
-        media.onloadeddata = () => {
-          if (!Number.isFinite(media.duration) || media.duration < .1) return finish(resolve);
+        media.onloadedmetadata = () => {
+          if (!Number.isFinite(media.duration) || media.duration < .1) {
+            if (media.readyState >= 2) finish(resolve);
+            else media.onloadeddata = () => finish(resolve);
+            return;
+          }
           media.onseeked = () => finish(resolve);
           media.currentTime = Math.min(.5, media.duration / 2);
         };
@@ -571,7 +626,7 @@ async function makePreview(file, type) {
     }
     return null;
   } finally {
-    media.onerror = media.onload = media.onloadeddata = media.onseeked = null;
+    media.onerror = media.onload = media.onloadedmetadata = media.onloadeddata = media.onseeked = null;
     media.removeAttribute("src");
     if (video) media.load();
     URL.revokeObjectURL(url);

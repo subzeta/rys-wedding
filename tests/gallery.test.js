@@ -121,7 +121,7 @@ test("access codes ignore letter case and surrounding spaces without mixing gues
   assert.equal((await call("/api/session", { method: "POST", body: { role: "guest", code: env.GUEST_CODE } })).status, 503);
 });
 
-test("incomplete files stay private; completion is idempotent; guests cannot fetch video originals", async () => {
+test("incomplete files stay private; completion is idempotent; direct original access requires admin", async () => {
   const { call, login, upload } = setup();
   const guest = await login();
   const admin = await login("admin");
@@ -137,7 +137,7 @@ test("incomplete files stay private; completion is idempotent; guests cannot fet
   assert.equal(list.items[0].hasPreview, true);
   assert.equal(list.items[0].originalKey, undefined);
   assert.equal((await call(`/api/items/${id}/original`, { token: guest })).status, 403);
-  assert.equal((await call(`/api/items/${id}/download`, { token: guest, method: "POST", body: {} })).status, 403);
+  assert.equal((await call(`/api/items/${id}/download`, { token: guest, method: "POST", body: {} })).status, 200);
   assert.equal((await call(`/api/items/${id}/preview`, { token: guest })).status, 200);
   const original = await call(`/api/items/${id}/original`, { token: admin });
   assert.equal(original.status, 200);
@@ -267,4 +267,22 @@ test("pagination exports every entry and malformed inputs don't leak internals",
   const response = await call("/api/items", { token });
   assert.equal(response.status, 500);
   assert.doesNotMatch(await response.text(), /secret-storage-detail/);
+});
+
+test("guests can download signed originals, while only admins can repair published covers", async () => {
+  const { call, login, upload } = setup();
+  const guest = await login();
+  const admin = await login("admin");
+  const { id, parts } = await upload(guest);
+  await call(`/api/uploads/${id}/complete`, { token: guest, method: "POST", body: { parts } });
+  const link = new URL((await (await call(`/api/items/${id}/download`, { token: guest, method: "POST", body: {} })).json()).url);
+  const original = await call(link.pathname + link.search);
+  assert.deepEqual(new Uint8Array(await original.arrayBuffer()), new Uint8Array([1, 2, 3, 4]));
+  const raw = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+  assert.equal((await call(`/api/items/${id}/preview`, { token: guest, method: "PUT", raw })).status, 403);
+  assert.equal((await call(`/api/items/${id}/preview`, { token: admin, method: "PUT", raw: new Uint8Array([1, 2, 3, 4]) })).status, 400);
+  assert.equal((await call(`/api/items/${id}/preview`, { token: admin, method: "PUT", raw })).status, 200);
+  const items = await (await call("/api/items", { token: guest })).json();
+  assert.equal(items.items[0].hasPreview, true);
+  assert.deepEqual(new Uint8Array(await (await call(`/api/items/${id}/preview`, { token: guest })).arrayBuffer()), raw);
 });

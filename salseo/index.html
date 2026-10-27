@@ -49,8 +49,13 @@
         <p id="uploads-closed" class="album-note" hidden>Ya hemos cerrado la recogida. ¡Gracias por todos los recuerdos!</p>
         <aside id="admin-tools" class="admin-note" hidden>
           <strong>Acceso privado</strong>
-          <p>Desde cada tarjeta puedes descargar el original o eliminar un recuerdo del álbum.</p>
+          <p>Desde cada tarjeta puedes eliminar un recuerdo del álbum.</p>
         </aside>
+        <div class="bulk-actions" aria-label="Descargar fotos y vídeos">
+          <button id="download-selected" class="btn btn-secondary" type="button" disabled>Descargar selección (0)</button>
+          <button id="download-all" class="btn" type="button">Descargar todo</button>
+          <button id="clear-selection" class="btn-link" type="button" hidden>Quitar selección</button>
+        </div>
         <p class="album-note">Fotos para revivirlo todo. Vídeos guardados para después.</p>
         <div id="grid" class="photo-grid" tabindex="-1" aria-label="Fotos y vídeos compartidos"></div>
         <div id="empty" class="empty-state" hidden><span aria-hidden="true">♡</span><h3>Un día así merece muchas fotos</h3><p>Estrena el álbum con tus momentos favoritos.</p><button class="btn" data-open-upload type="button">＋ Compartir mis recuerdos</button></div>
@@ -60,6 +65,18 @@
       <noscript><p>Activa JavaScript para entrar en el álbum y compartir tus recuerdos.</p></noscript>
     </main>
     <footer class="gallery-footer">Gracias por vivir este día con nosotros. <span>R & S</span></footer>
+    <dialog id="download-dialog" class="upload-dialog" aria-labelledby="download-title">
+      <div class="dialog-heading">
+        <h2 id="download-title">Guardar recuerdos</h2>
+        <button id="close-download" class="icon-button" type="button" aria-label="Cerrar descargas">✕</button>
+      </div>
+      <div class="upload-card">
+        <p id="download-status" role="status" aria-live="polite"></p>
+        <button id="save-downloads" class="btn" type="button" hidden>Guardar archivos</button>
+        <p class="album-note">En el móvil, elige guardar en Fotos o en Archivos si aparece esa opción. Los vídeos grandes se descargan por separado. Si el navegador pide permiso para varias descargas, permítelo o usa los enlaces individuales.</p>
+        <ul id="download-links"></ul>
+      </div>
+    </dialog>
     <dialog id="upload-dialog" class="upload-dialog" aria-labelledby="upload-title">
       <div class="dialog-heading">
         <div><p class="eyebrow">Nuestro día, desde tus ojos</p><h2 id="upload-title">Comparte tus recuerdos</h2></div>

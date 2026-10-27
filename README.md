@@ -12,7 +12,7 @@ un archivo privado ignorado por Git. Guarda una copia en tu gestor de contraseñ
 
 - Fotos y vídeos originales en un bucket **R2 Standard privado**.
 - Copias JPEG de hasta 1600 píxeles y 500 KB para mostrar las fotos y portadas.
-- Los vídeos no se reproducen ni se descargan con el acceso de invitados.
+- Los vídeos se muestran con portada y se pueden descargar como originales con el acceso de invitados.
 - Código compartido para invitados y otro código privado para los administradores.
 - Ambos códigos ignoran mayúsculas/minúsculas y espacios al principio o al final.
 - El código se intercambia por una sesión firmada de 12 horas, guardada solo en la pestaña.
@@ -20,7 +20,7 @@ un archivo privado ignorado por Git. Guarda una copia en tu gestor de contraseñ
 - Hasta 100 MiB por foto y 1 GiB por vídeo, en bloques de 8 MiB, con dos reintentos automáticos por bloque. Los límites se validan en el servidor.
 - Subidas en una ventana aparte, progreso visible y fotos recién subidas resaltadas en el mosaico.
 - Los administradores pueden eliminar originales y portadas desde cada tarjeta, con confirmación. Los invitados no pueden borrar archivos.
-- Originales solo descargables como administrador. El navegador recibe enlaces de descarga de cinco minutos, limitados a un solo original, para descargarlos sin cargar vídeos completos en memoria.
+- Todos los invitados pueden descargar originales, seleccionar varios recuerdos o descargar todo, sin ZIP. En móviles compatibles se usa el menú nativo para guardar grupos de hasta 20 archivos y 64 MiB; los archivos mayores se descargan directamente. Otros navegadores reciben descargas individuales y pueden pedir permiso para varias descargas. Los enlaces firmados duran cinco minutos y se generan al usarlos.
 
 ## Preparación local
 
@@ -89,9 +89,19 @@ Con Python 3.9 o posterior, sin dependencias externas:
 python3 tools/export-gallery.py https://rys-gallery.subzeta.workers.dev recuerdos
 ```
 
-Pide el código privado sin mostrarlo ni guardarlo. Descarga los originales por streaming, un directorio por archivo para conservar nombres repetidos, y guarda un catálogo con fecha, autor y nombre original. Si se interrumpe, vuelve a ejecutarlo: salta los archivos que ya tienen el tamaño esperado. No borra archivos en R2. También puedes descargar cada original desde la galería entrando como administrador.
+Pide el código privado sin mostrarlo ni guardarlo. Descarga los originales por streaming, un directorio por archivo para conservar nombres repetidos, y guarda un catálogo con fecha, autor y nombre original. Si se interrumpe, vuelve a ejecutarlo: salta los archivos que ya tienen el tamaño esperado. No borra archivos en R2. Todos los invitados también pueden descargar originales, selecciones o el álbum completo desde la galería.
 
 Cuando termine la boda, cambia `UPLOADS_ENABLED` a `"false"` y redespliega para cerrar las subidas. Comprueba la exportación antes de eliminar el bucket desde Cloudflare.
+
+## Reparar portadas de vídeos
+
+Si una subida se guardó sin portada, un administrador puede repararla con Python 3 y `ffmpeg` instalado:
+
+```sh
+python3 tools/repair-previews.py https://rys-gallery.subzeta.workers.dev
+```
+
+Solo procesa vídeos publicados sin portada, usa archivos temporales que elimina después y conserva intactos los originales. El servidor comprueba el permiso de administrador y el JPEG antes de publicar la portada.
 
 ## Límites conocidos
 
@@ -99,7 +109,7 @@ Cuando termine la boda, cambia `UPLOADS_ENABLED` a `"false"` y redespliega para 
 - La portada se extrae en el navegador. Si el dispositivo no puede decodificar una foto HEIC/AVIF o un vídeo, aparece una tarjeta genérica; el original se conserva sin conversión. También se usa una tarjeta genérica si falla la subida de la portada.
 - Las sesiones pendientes y portadas de subidas abandonadas pueden dejar objetos pequeños en R2. R2 aborta por defecto las subidas multipart incompletas a los siete días; se puede configurar una regla de ciclo de vida. No pongas una caducidad general a `originals/` o `previews/`: borraría recuerdos válidos.
 - El control de tamaños y frecuencia reduce abusos, pero no impone una cuota global de almacenamiento. Puedes cerrar todas las subidas con `UPLOADS_ENABLED`.
-- Las fotos ampliadas muestran la copia ligera. Solo el administrador puede descargar el original. Los vídeos nunca se envían al navegador de invitados para reproducirlos.
+- Las fotos ampliadas muestran la copia ligera. Las descargas conservan el original, también para invitados. El navegador solo recibe los vídeos completos al descargarlos.
 - Antes de publicar, probar fotos HEIC/JPEG y vídeos MOV/MP4 desde al menos un iPhone y un Android reales, incluida una conexión interrumpida.
 
 ## Verificación

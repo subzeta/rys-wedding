@@ -159,8 +159,17 @@ async function route(request, env) {
   if (itemMatch) {
     const [, id, action] = itemMatch;
     if (!ID.test(id)) fail(400, "Archivo no válido.");
-    if (action !== "preview" && !admin) fail(403, "Solo Raquel y Sergio pueden descargar los originales.");
+    if (action === "original" && !admin) fail(403, "Solo Raquel y Sergio pueden acceder directamente a los originales.");
     const record = await readRecord(env, "entries", id);
+    if (action === "preview" && method === "PUT") {
+      if (!admin) fail(403, "Solo Raquel y Sergio pueden reparar portadas.");
+      const body = await bytes(request, MAX_PREVIEW);
+      if (body.length < 4 || body[0] !== 0xff || body[1] !== 0xd8 || body[2] !== 0xff) fail(400, "Vista previa no válida.");
+      await env.GALLERY.put(`previews/${id}.jpg`, body, { httpMetadata: { contentType: "image/jpeg" } });
+      record.hasPreview = true;
+      await env.GALLERY.put(`entries/${id}.json`, JSON.stringify(record), { customMetadata: { record: JSON.stringify(record) } });
+      return Response.json({ ok: true });
+    }
     if (action === "download" && method === "POST") {
       const token = await issue(env, "download", { item: id });
       return Response.json({ url: `${url.origin}/api/download/${id}?token=${token}` });
