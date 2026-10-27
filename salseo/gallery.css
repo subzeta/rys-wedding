@@ -37,16 +37,15 @@ button:disabled { opacity: .6; cursor: wait; }
 .album-note { color: var(--muted); font-size: .8rem; margin-block: 1rem; }
 .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 5px; }
 .media-card { position: relative; min-width: 0; background: #f0eaf5; border-radius: 6px; overflow: hidden; scroll-margin-block: 130px; }
-.media-tile { width: 100%; padding: 0; border: 0; background: #f2edf7; color: var(--muted); display: grid; place-content: center; position: relative; aspect-ratio: 1; }
+.media-tile { width: 100%; padding: 0; border: 0; background: #f2edf7; color: var(--muted); display: grid; place-content: center; position: relative; aspect-ratio: 1; overflow: hidden; }
 button.media-tile { cursor: zoom-in; display: block; }
-.media-tile img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .25s ease; }
+.media-tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .25s ease; }
 button.media-tile:hover img { transform: scale(1.035); }
 .placeholder { font-size: 2.5rem; display: block; text-align: center; }
 .media-badge, .new-badge { position: absolute; top: .6rem; color: #fff; background: #32273dcc; padding: .25rem .5rem; border-radius: 6px; font-size: .65rem; pointer-events: none; z-index: 1; }
 .media-badge { left: .6rem; }
 .new-badge { right: .6rem; background: #6f3b9c; font-weight: 700; }
 .media-caption { font-size: .75rem; position: absolute; bottom: 0; left: 0; right: 0; padding: 1.5rem .65rem .5rem; margin: 0; color: #fff; background: linear-gradient(transparent, #20182bcc); pointer-events: none; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.media-card:has(.media-actions) .media-caption { bottom: 42px; }
 .media-actions { display: flex; justify-content: space-between; align-items: center; gap: .4rem; padding: .65rem .5rem; background: #fff; min-height: 42px; }
 .media-actions button { font-size: .72rem; margin: 0; padding: 0; }
 .delete-item { color: #a03543; }
@@ -141,4 +140,3 @@ body:has(dialog[open]) { overflow: hidden; }
 .select-item { display: flex; align-items: center; gap: .4rem; padding: .5rem; background: #fff; font-size: .75rem; cursor: pointer; }
 .select-item input { width: 20px; height: 20px; accent-color: var(--accent-dark); }
 .media-card:has(.select-item input:checked) { outline: 3px solid var(--accent-dark); outline-offset: -3px; }
-.media-card:has(.select-item) .media-caption { bottom: 80px; }

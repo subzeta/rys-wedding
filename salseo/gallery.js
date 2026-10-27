@@ -336,11 +336,11 @@ function addTile(item) {
     badge.textContent = "Vídeo";
     card.append(badge);
   }
-  const caption = document.createElement("p");
+  const caption = document.createElement("span");
   caption.className = "media-caption";
   caption.textContent = item.guestName || "";
   caption.hidden = !item.guestName;
-  card.append(caption);
+  tile.append(caption);
   {
     const selection = document.createElement("label");
     selection.className = "select-item";
@@ -398,7 +398,7 @@ async function loadPreview(item, tile) {
     img.src = url;
     img.alt = item.kind === "video" ? "Portada del vídeo. Sin reproducción." : (item.guestName ? `Foto de ${item.guestName}` : "Foto de nuestra boda");
     img.loading = "lazy";
-    tile.replaceChildren(img);
+    tile.querySelector(".placeholder").replaceWith(img);
     if (item.kind === "photo") tile.addEventListener("click", () => {
       $("viewer-image").src = url;
       $("viewer-image").alt = img.alt;
