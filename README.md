@@ -12,7 +12,7 @@ un archivo privado ignorado por Git. Guarda una copia en tu gestor de contraseñ
 
 - Fotos y vídeos originales en un bucket **R2 Standard privado**.
 - Copias JPEG de hasta 1600 píxeles y 500 KB para mostrar las fotos y portadas.
-- Los vídeos se muestran con portada y se pueden descargar como originales con el acceso de invitados.
+- Los vídeos se reproducen dentro del visor con controles nativos. Solo se solicita el original al pulsar reproducir; no hay reproducción automática. Las flechas recorren fotos y vídeos.
 - Código compartido para invitados y otro código privado para los administradores.
 - Ambos códigos ignoran mayúsculas/minúsculas y espacios al principio o al final.
 - El código se intercambia por una sesión firmada de 12 horas, guardada solo en la pestaña.
@@ -109,7 +109,7 @@ Solo procesa vídeos publicados sin portada, usa archivos temporales que elimina
 - La portada se extrae en el navegador. Si el dispositivo no puede decodificar una foto HEIC/AVIF o un vídeo, aparece una tarjeta genérica; el original se conserva sin conversión. También se usa una tarjeta genérica si falla la subida de la portada.
 - Las sesiones pendientes y portadas de subidas abandonadas pueden dejar objetos pequeños en R2. R2 aborta por defecto las subidas multipart incompletas a los siete días; se puede configurar una regla de ciclo de vida. No pongas una caducidad general a `originals/` o `previews/`: borraría recuerdos válidos.
 - El control de tamaños y frecuencia reduce abusos, pero no impone una cuota global de almacenamiento. Puedes cerrar todas las subidas con `UPLOADS_ENABLED`.
-- Las fotos ampliadas muestran la copia ligera. Las descargas conservan el original, también para invitados. El navegador solo recibe los vídeos completos al descargarlos.
+- Las fotos ampliadas muestran la copia ligera. Las descargas conservan el original, también para invitados. La reproducción usa enlaces privados limitados a un vídeo, válidos hasta que caduque la sesión, y peticiones parciales de bytes para avanzar sin cargar todo el vídeo en memoria. El formato y códec originales deben ser compatibles con el navegador; si no lo son, se ofrece descargar el original. No se generan conversiones ni copias adicionales.
 - Antes de publicar, probar fotos HEIC/JPEG y vídeos MOV/MP4 desde al menos un iPhone y un Android reales, incluida una conexión interrumpida.
 
 ## Verificación

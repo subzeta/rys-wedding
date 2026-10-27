@@ -21,6 +21,7 @@ const selected = new Set();
 let preparingDownload = false;
 let viewedTile = null;
 let viewerBusy = false;
+let playbackRequest = 0;
 
 function updateSelection() {
   $("download-selected").textContent = `Descargar selección (${selected.size})`;
@@ -197,7 +198,7 @@ function logout() {
   $("download-status").textContent = "";
   token = "";
   sessionStorage.removeItem("gallery-session");
-  $("viewer").close();
+  closeViewer();
   $("upload-dialog").close();
   $("delete-dialog").close();
   $("upload-status").hidden = true;
@@ -259,31 +260,79 @@ $("admin-toggle").addEventListener("click", () => {
 $("logout").addEventListener("click", logout);
 $("refresh").addEventListener("click", () => loadItems(true).catch((error) => message(error.message, true)));
 $("load-more").addEventListener("click", () => loadItems().catch((error) => message(error.message, true)));
-$("close-viewer").addEventListener("click", () => $("viewer").close());
-$("viewer").addEventListener("click", (event) => { if (event.target === $("viewer")) $("viewer").close(); });
+$("close-viewer").addEventListener("click", () => closeViewer());
+$("viewer").addEventListener("click", (event) => { if (event.target === $("viewer")) closeViewer(); });
 
-function viewerPhotos() {
-  return [...$("grid").querySelectorAll("button.media-tile img")].map((img) => img.parentElement);
+function viewerTiles() {
+  return [...$("grid").querySelectorAll("button.media-tile")].filter((tile) => tile.dataset.kind === "video" || tile.querySelector("img"));
 }
 
 function updateViewerNavigation() {
-  const photos = viewerPhotos();
+  const photos = viewerTiles();
   const index = photos.indexOf(viewedTile);
   $("previous-photo").disabled = viewerBusy || index <= 0;
   $("next-photo").disabled = viewerBusy || (index === photos.length - 1 && !cursor);
   $("viewer-position").textContent = `${index + 1} / ${photos.length}${cursor ? "+" : ""}`;
 }
 
-function showPhoto(tile) {
+function closeViewer() {
+  stopVideo();
+  $("viewer").close();
+}
+
+function stopVideo() {
+  playbackRequest++;
+  $("viewer-video").pause();
+  $("viewer-video").removeAttribute("src");
+  $("viewer-video").removeAttribute("poster");
+  $("viewer-video").load();
+}
+
+async function showMedia(tile) {
+  if (tile.dataset.kind !== "video" && !tile.querySelector("img")) return;
   viewedTile = tile;
+  stopVideo();
+  const request = playbackRequest;
   const img = tile.querySelector("img");
-  $("viewer-image").src = img.src;
-  $("viewer-image").alt = img.alt;
+  const video = tile.dataset.kind === "video";
+  $("viewer-image").hidden = video;
+  $("viewer-video").hidden = !video;
+  $("viewer-download").hidden = !video;
+  $("viewer").classList.toggle("showing-video", video);
+  if (img && !video) {
+    $("viewer-image").src = img.src;
+    $("viewer-image").alt = img.alt;
+  }
   $("viewer-caption").textContent = tile.querySelector(".media-caption").textContent || "Raquel & Sergio · 24 de octubre de 2026";
-  $("viewer-status").textContent = "";
+  $("viewer-status").textContent = video ? "Preparando vídeo…" : "";
   updateViewerNavigation();
   if (!$("viewer").open) $("viewer").showModal();
+  if (!video) return;
+  if (img) $("viewer-video").poster = img.src;
+  try {
+    const result = await post(`/api/items/${tile.closest(".media-card").dataset.id}/play`, {});
+    if (request !== playbackRequest || !$("viewer").open) return;
+    $("viewer-video").src = result.url;
+    $("viewer-status").textContent = "Pulsa ▶ para reproducir.";
+  } catch (error) {
+    if (request === playbackRequest) $("viewer-status").textContent = error.message;
+  }
 }
+
+$("viewer-video").addEventListener("playing", () => { $("viewer-status").textContent = ""; });
+$("viewer-video").addEventListener("error", () => {
+  if ($("viewer-video").hasAttribute("src")) $("viewer-status").textContent = "Este vídeo no se puede reproducir en tu navegador. Puedes descargar el original.";
+});
+$("viewer-download").addEventListener("click", async () => {
+  const tile = viewedTile;
+  if (!tile) return;
+  $("viewer-download").disabled = true;
+  try {
+    const result = await post(`/api/items/${tile.closest(".media-card").dataset.id}/download`, {});
+    await startDownload(result.url, tile.dataset.name);
+  } catch (error) { $("viewer-status").textContent = error.message; }
+  finally { $("viewer-download").disabled = false; }
+});
 
 async function movePhoto(direction) {
   if (!viewedTile || viewerBusy) return;
@@ -291,25 +340,26 @@ async function movePhoto(direction) {
   updateViewerNavigation();
   const current = viewedTile;
   try {
-    let photos = viewerPhotos();
+    let photos = viewerTiles();
     while (direction > 0 && photos.indexOf(current) === photos.length - 1 && cursor) {
-      $("viewer-status").textContent = "Cargando más fotos…";
+      $("viewer-status").textContent = "Cargando más recuerdos…";
       await loadItems();
       if (!$("viewer").open || viewedTile !== current) return;
-      photos = viewerPhotos();
+      photos = viewerTiles();
     }
     const next = photos[photos.indexOf(current) + direction];
     $("viewer-status").textContent = "";
-    if (next) showPhoto(next);
+    if (next) await showMedia(next);
   } catch (error) { $("viewer-status").textContent = error.message; }
   finally { viewerBusy = false; updateViewerNavigation(); }
 }
 
 $("previous-photo").addEventListener("click", () => movePhoto(-1));
 $("next-photo").addEventListener("click", () => movePhoto(1));
-$("viewer").addEventListener("close", () => { viewedTile = null; });
+$("viewer").addEventListener("close", () => { viewedTile = null; stopVideo(); });
+$("viewer").addEventListener("cancel", stopVideo);
 document.addEventListener("keydown", (event) => {
-  if (!$("viewer").open) return;
+  if (!$("viewer").open || event.target === $("viewer-video")) return;
   if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
     event.preventDefault();
     movePhoto(event.key === "ArrowLeft" ? -1 : 1);
@@ -338,7 +388,7 @@ async function renderItems(reset) {
   try {
     const result = await (await api(`/api/items${!reset && cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`)).json();
     if (reset) {
-      $("viewer").close();
+      closeViewer();
       $("grid").replaceChildren();
       releasePreviews();
       itemCount = 0;
@@ -375,11 +425,14 @@ function addTile(item) {
     badge.textContent = "Nuevo";
     card.append(badge);
   }
-  const tile = document.createElement(item.kind === "photo" && item.hasPreview ? "button" : "div");
+  const tile = document.createElement(item.kind === "video" || item.hasPreview ? "button" : "div");
   tile.className = "media-tile";
+  tile.dataset.kind = item.kind;
+  tile.dataset.name = item.name;
   if (tile.tagName === "BUTTON") {
     tile.type = "button";
-    tile.setAttribute("aria-label", `Ampliar foto${item.guestName ? ` de ${item.guestName}` : ""}`);
+    tile.addEventListener("click", () => showMedia(tile));
+    tile.setAttribute("aria-label", `${item.kind === "video" ? "Reproducir vídeo" : "Ampliar foto"}${item.guestName ? ` de ${item.guestName}` : ""}`);
   }
   const placeholder = document.createElement("span");
   placeholder.className = "placeholder";
@@ -387,6 +440,12 @@ function addTile(item) {
   tile.append(placeholder);
   card.append(tile);
   if (item.kind === "video") {
+    tile.classList.add("video-tile");
+    const play = document.createElement("span");
+    play.className = "play-icon";
+    play.setAttribute("aria-hidden", "true");
+    play.textContent = "▶";
+    tile.append(play);
     const badge = document.createElement("span");
     badge.className = "media-badge";
     badge.textContent = "Vídeo";
@@ -456,10 +515,9 @@ async function loadPreview(item, tile) {
     previewURLs.add(url);
     const img = document.createElement("img");
     img.src = url;
-    img.alt = item.kind === "video" ? "Portada del vídeo. Sin reproducción." : (item.guestName ? `Foto de ${item.guestName}` : "Foto de nuestra boda");
+    img.alt = item.kind === "video" ? "Portada del vídeo" : (item.guestName ? `Foto de ${item.guestName}` : "Foto de nuestra boda");
     img.loading = "lazy";
     tile.querySelector(".placeholder").replaceWith(img);
-    if (item.kind === "photo") tile.addEventListener("click", () => showPhoto(tile));
     if ($("viewer").open) updateViewerNavigation();
   } catch (error) {
     if (error.status !== 401) message("Alguna portada no ha cargado. Puedes pulsar «Actualizar álbum» para volver a intentarlo.", true);

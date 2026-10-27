@@ -17,10 +17,10 @@ class MemoryBucket {
   async delete(keys) {
     for (const key of Array.isArray(keys) ? keys : [keys]) this.objects.delete(key);
   }
-  async get(key) {
+  async get(key, options = {}) {
     const object = this.objects.get(key);
     if (!object) return null;
-    return { size: object.data.byteLength, body: object.data, json: async () => JSON.parse(new TextDecoder().decode(object.data)) };
+    return { size: object.data.byteLength, body: options.range ? object.data.slice(options.range.offset, options.range.offset + options.range.length) : object.data, json: async () => JSON.parse(new TextDecoder().decode(object.data)) };
   }
   async list({ prefix, limit, cursor }) {
     const objects = [...this.objects.entries()].filter(([key]) => key.startsWith(prefix)).sort(([a], [b]) => a.localeCompare(b));
@@ -67,10 +67,11 @@ function setup() {
     LOGIN_LIMIT: { limit: async () => ({ success: true }) },
     UPLOAD_LIMIT: { limit: async () => ({ success: true }) },
   };
-  async function call(path, { token, body, method = "GET", origin, raw } = {}) {
+  async function call(path, { token, body, method = "GET", origin, raw, range } = {}) {
     const headers = new Headers();
     if (token) headers.set("Authorization", `Bearer ${token}`);
     if (origin) headers.set("Origin", origin);
+    if (range) headers.set("Range", range);
     if (body !== undefined) headers.set("Content-Type", "application/json");
     return worker.fetch(new Request(`https://gallery.example${path}`, {
       method, headers, body: raw ?? (body !== undefined ? JSON.stringify(body) : undefined),
@@ -307,4 +308,52 @@ test("signed downloads retain image/video types and safe filenames with extensio
     assert.ok(decodeURIComponent(link.pathname).endsWith(name.split('/').pop()));
     assert.deepEqual(new Uint8Array(await response.arrayBuffer()), new Uint8Array([1, 2, 3, 4]));
   }
+});
+
+test("guests can play only the signed video and seek using byte ranges without attachment downloads", async () => {
+  const { call, login, upload } = setup();
+  const guest = await login();
+  const { id, parts } = await upload(guest, { name: "baile.mp4", type: "video/mp4" });
+  await call(`/api/uploads/${id}/complete`, { token: guest, method: "POST", body: { parts } });
+  assert.equal((await call(`/api/items/${id}/play`, { method: "POST", body: {} })).status, 401);
+  const link = new URL((await (await call(`/api/items/${id}/play`, { token: guest, method: "POST", body: {} })).json()).url);
+  const path = link.pathname + link.search;
+  const full = await call(path);
+  assert.equal(full.status, 200);
+  assert.equal(full.headers.get("Content-Type"), "video/mp4");
+  assert.equal(full.headers.get("Content-Disposition"), "inline");
+  assert.equal(full.headers.get("Accept-Ranges"), "bytes");
+  assert.deepEqual(new Uint8Array(await full.arrayBuffer()), new Uint8Array([1, 2, 3, 4]));
+  for (const [range, expected, contentRange] of [
+    ["bytes=1-2", [2, 3], "bytes 1-2/4"],
+    ["bytes=2-", [3, 4], "bytes 2-3/4"],
+    ["bytes=-2", [3, 4], "bytes 2-3/4"],
+    ["bytes=1-99", [2, 3, 4], "bytes 1-3/4"],
+    ["bytes=-99", [1, 2, 3, 4], "bytes 0-3/4"],
+  ]) {
+    const response = await call(path, { range });
+    assert.equal(response.status, 206);
+    assert.equal(response.headers.get("Content-Range"), contentRange);
+    assert.equal(response.headers.get("Content-Length"), String(expected.length));
+    assert.deepEqual(new Uint8Array(await response.arrayBuffer()), new Uint8Array(expected));
+  }
+  for (const range of ["bytes=4-", "bytes=3-1", "bytes=-0", "bytes=-", "bytes=0-1,2-3", "bytes=999999999999999999999-"]) {
+    const response = await call(path, { range });
+    assert.equal(response.status, 416);
+    assert.equal(response.headers.get("Content-Range"), "bytes */4");
+  }
+  const playbackToken = link.searchParams.get("token");
+  assert.equal((await call("/api/items", { token: playbackToken })).status, 403);
+  assert.equal((await call(`/api/download/${id}${link.search}`)).status, 403);
+  assert.equal((await call(`/api/play/${id.replace(/.$/, id.endsWith("a") ? "b" : "a")}${link.search}`)).status, 403);
+  const download = new URL((await (await call(`/api/items/${id}/download`, { token: guest, method: "POST", body: {} })).json()).url);
+  assert.equal((await call(`/api/play/${id}${download.search}`)).status, 403);
+  const now = Date.now;
+  try {
+    Date.now = () => now() + 12 * 3600 * 1000 + 1000;
+    assert.equal((await call(path)).status, 401);
+  } finally { Date.now = now; }
+  const photo = await upload(guest, { name: "foto.jpg", type: "image/jpeg" });
+  await call(`/api/uploads/${photo.id}/complete`, { token: guest, method: "POST", body: { parts: photo.parts } });
+  assert.equal((await call(`/api/items/${photo.id}/play`, { token: guest, method: "POST", body: {} })).status, 400);
 });

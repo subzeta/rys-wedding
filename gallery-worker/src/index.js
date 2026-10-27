@@ -130,11 +130,18 @@ async function route(request, env) {
     return Response.json({ token: await issue(env, role), role });
   }
 
+  const playMatch = path.match(/^\/api\/play\/([^/]+)$/);
+  if (playMatch && method === "GET") {
+    const session = await authenticate(request, env, url.searchParams.get("token") || "");
+    const id = playMatch[1];
+    if (!ID.test(id) || session.role !== "download" || session.item !== id || session.play !== true) fail(403, "Enlace de reproducción no válido.");
+    return videoResponse(request, env, await readRecord(env, "entries", id));
+  }
   const downloadMatch = path.match(/^\/api\/download\/([^/]+)(?:\/[^/]+)?$/);
   if (downloadMatch && method === "GET") {
     const session = await authenticate(request, env, url.searchParams.get("token") || "");
     const id = downloadMatch[1];
-    if (!ID.test(id) || session.role !== "download" || session.item !== id) fail(403, "Enlace de descarga no válido.");
+    if (!ID.test(id) || session.role !== "download" || session.item !== id || session.play) fail(403, "Enlace de descarga no válido.");
     return originalResponse(env, await readRecord(env, "entries", id));
   }
   const session = await authenticate(request, env);
@@ -164,7 +171,7 @@ async function route(request, env) {
     return Response.json({ id });
   }
 
-  const itemMatch = path.match(/^\/api\/items\/([^/]+)\/(preview|original|download)$/);
+  const itemMatch = path.match(/^\/api\/items\/([^/]+)\/(preview|original|download|play)$/);
   if (itemMatch) {
     const [, id, action] = itemMatch;
     if (!ID.test(id)) fail(400, "Archivo no válido.");
@@ -179,6 +186,12 @@ async function route(request, env) {
       await env.GALLERY.put(`entries/${id}.json`, JSON.stringify(record), { customMetadata: { record: JSON.stringify(record) } });
       return Response.json({ ok: true });
     }
+    if (action === "play" && method === "POST") {
+      if (record.kind !== "video") fail(400, "Este archivo no es un vídeo.");
+      const token = await issue(env, "download", { item: id, play: true, exp: session.exp });
+      return Response.json({ url: `${url.origin}/api/play/${id}?token=${token}` });
+    }
+    if (action === "play") fail(405, "Método no permitido.");
     if (action === "download" && method === "POST") {
       const token = await issue(env, "download", { item: id });
       return Response.json({ url: `${url.origin}/api/download/${id}/${encodeURIComponent(downloadName(record.name))}?token=${token}` });
@@ -255,6 +268,33 @@ async function route(request, env) {
   fail(404, "Esta dirección no existe.");
 }
 
+async function videoResponse(request, env, record) {
+  if (record.kind !== "video") fail(400, "Este archivo no es un vídeo.");
+  const headers = new Headers({ "Content-Type": originalType(record.name), "Content-Disposition": "inline", "Accept-Ranges": "bytes" });
+  const range = request.headers.get("Range");
+  let offset = 0, length = record.size;
+  if (range) {
+    const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+    let start = match?.[1] ? Number(match[1]) : undefined;
+    let end = match?.[2] ? Number(match[2]) : undefined;
+    if (start === undefined && end !== undefined) {
+      start = Math.max(0, record.size - end);
+      end = record.size - 1;
+    }
+    if (!match || start === undefined || !Number.isSafeInteger(start) || (end !== undefined && !Number.isSafeInteger(end)) || start >= record.size || (end !== undefined && end < start)) {
+      headers.set("Content-Range", `bytes */${record.size}`);
+      return new Response(null, { status: 416, headers });
+    }
+    offset = start;
+    length = Math.min(end ?? record.size - 1, record.size - 1) - offset + 1;
+    headers.set("Content-Range", `bytes ${offset}-${offset + length - 1}/${record.size}`);
+  }
+  const object = await env.GALLERY.get(record.originalKey, range ? { range: { offset, length } } : undefined);
+  if (!object) fail(404, "No encontramos este archivo.");
+  headers.set("Content-Length", String(length));
+  return new Response(object.body, { status: range ? 206 : 200, headers });
+}
+
 async function originalResponse(env, record) {
   const object = await env.GALLERY.get(record.originalKey);
   if (!object) fail(404, "No encontramos este archivo.");
@@ -276,7 +316,7 @@ export default {
     });
     if (origin && !allowed.includes(origin)) return Response.json({ error: "Origen no permitido." }, { status: 403, headers });
     if (origin) headers.set("Access-Control-Allow-Origin", origin);
-    headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type, Range");
     headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
     let response;

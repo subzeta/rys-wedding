@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex,nofollow" />
     <meta name="referrer" content="no-referrer" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob:; media-src blob:; connect-src 'self' https://*.workers.dev http://127.0.0.1:8787; object-src 'none'; base-uri 'none'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob:; media-src blob: https://*.workers.dev http://127.0.0.1:8787; connect-src 'self' https://*.workers.dev http://127.0.0.1:8787; object-src 'none'; base-uri 'none'; form-action 'self'" />
     <title>Recuerdos de nuestra boda · Raquel & Sergio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="../styles.css" />
-    <link rel="stylesheet" href="gallery.css?v=20261027-5" />
-    <script type="module" src="gallery.js?v=20261027-5"></script>
+    <link rel="stylesheet" href="gallery.css?v=20261027-6" />
+    <script type="module" src="gallery.js?v=20261027-6"></script>
   </head>
   <body>
     <header class="gallery-header">
@@ -56,7 +56,7 @@
           <button id="download-all" class="btn" type="button">Descargar todo</button>
           <button id="clear-selection" class="btn-link" type="button" hidden>Quitar selección</button>
         </div>
-        <p class="album-note">Fotos para revivirlo todo. Vídeos guardados para después.</p>
+        <p class="album-note">Fotos para revivirlo todo. Pulsa ▶ para ver los vídeos.</p>
         <div id="grid" class="photo-grid" tabindex="-1" aria-label="Fotos y vídeos compartidos"></div>
         <div id="empty" class="empty-state" hidden><span aria-hidden="true">♡</span><h3>Un día así merece muchas fotos</h3><p>Estrena el álbum con tus momentos favoritos.</p><button class="btn" data-open-upload type="button">＋ Compartir mis recuerdos</button></div>
         <button id="load-more" class="btn btn-secondary" type="button" hidden>Ver más recuerdos</button>
@@ -113,18 +113,20 @@
         <button id="confirm-delete" class="btn btn-danger" type="button">Eliminar definitivamente</button>
       </div>
     </dialog>
-    <dialog id="viewer" aria-label="Foto ampliada">
+    <dialog id="viewer" aria-label="Fotos y vídeos">
       <div class="viewer-heading">
         <span id="viewer-position" aria-live="polite" aria-atomic="true"></span>
-        <button id="close-viewer" class="icon-button" type="button" aria-label="Cerrar foto">✕</button>
+        <button id="close-viewer" class="icon-button" type="button" aria-label="Cerrar visor">✕</button>
       </div>
       <div class="viewer-stage">
         <img id="viewer-image" alt="" />
-        <button id="previous-photo" class="viewer-arrow" type="button" aria-label="Foto anterior">‹</button>
-        <button id="next-photo" class="viewer-arrow" type="button" aria-label="Foto siguiente">›</button>
+        <video id="viewer-video" controls playsinline preload="none" hidden aria-label="Vídeo de la boda"></video>
+        <button id="previous-photo" class="viewer-arrow" type="button" aria-label="Recuerdo anterior">‹</button>
+        <button id="next-photo" class="viewer-arrow" type="button" aria-label="Recuerdo siguiente">›</button>
       </div>
       <p id="viewer-caption"></p>
       <p id="viewer-status" role="status"></p>
+      <button id="viewer-download" class="btn btn-secondary" type="button" hidden>Descargar vídeo</button>
     </dialog>
   </body>
 </html>
