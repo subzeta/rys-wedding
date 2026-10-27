@@ -1,5 +1,5 @@
 import { API_URL } from "./config.js";
-import { prepareDownloads, cancelDownloads } from "./downloads.js?v=20261027-2";
+import { prepareDownloads, cancelDownloads, downloadFile as startDownload } from "./downloads.js?v=20261027-3";
 
 const $ = (id) => document.getElementById(id);
 const base = API_URL.replace(/\/$/, "");
@@ -27,15 +27,6 @@ function updateSelection() {
   $("clear-selection").hidden = !selected.size;
 }
 
-function startDownload(url, name) {
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = name;
-  link.referrerPolicy = "no-referrer";
-  document.body.append(link);
-  link.click();
-  link.remove();
-}
 
 async function downloadMultiple(all) {
   if (preparingDownload) return;
@@ -373,7 +364,7 @@ function addTile(item) {
       download.disabled = true;
       try {
         const result = await post(`/api/items/${item.id}/download`, {});
-        startDownload(result.url, item.name);
+        await startDownload(result.url, item.name);
       } catch (error) { message(error.message, true); }
       finally { download.disabled = false; }
     });

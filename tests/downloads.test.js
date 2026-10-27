@@ -50,3 +50,35 @@ test("a failed download can retry only the files still pending", async () => {
   await elements.get("save-downloads").onclick();
   assert.deepEqual(sent.map((item) => item.name), ["foto.jpg", "baile.mov"]);
 });
+
+test("saving creates a local downloadable file instead of navigating to the external photo", async (t) => {
+  const { downloadFile } = await import("../salseo/downloads.js");
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const bytes = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+  const response = new Response(bytes, { headers: { "Content-Type": "image/jpeg" } });
+  t.mock.method(globalThis, "fetch", async () => response);
+  let savedBlob;
+  t.mock.method(URL, "createObjectURL", (blob) => { savedBlob = blob; return "blob:https://gallery.example/local-photo"; });
+  const revoke = t.mock.method(URL, "revokeObjectURL", () => {});
+  const anchor = { click: t.mock.fn(), remove: t.mock.fn() };
+  globalThis.document = { createElement: () => anchor, body: { append: t.mock.fn() } };
+  await downloadFile("https://api.example/photo.jpg", "foto de boda.jpg");
+  assert.equal(anchor.href, "blob:https://gallery.example/local-photo");
+  assert.equal(anchor.download, "foto de boda.jpg");
+  assert.equal(savedBlob.type, "image/jpeg");
+  assert.deepEqual(new Uint8Array(await savedBlob.arrayBuffer()), bytes);
+  assert.equal(anchor.click.mock.callCount(), 1);
+  assert.equal(anchor.remove.mock.callCount(), 1);
+  assert.equal(revoke.mock.callCount(), 0);
+  t.mock.timers.tick(10000);
+  assert.equal(revoke.mock.callCount(), 1);
+});
+
+test("a failed photo fetch cannot navigate or download an error page", async (t) => {
+  const { downloadFile } = await import("../salseo/downloads.js");
+  t.mock.method(globalThis, "fetch", async () => new Response("Expired", { status: 401 }));
+  const create = t.mock.fn();
+  globalThis.document = { createElement: create };
+  await assert.rejects(downloadFile("https://api.example/photo.jpg", "foto.jpg"), /obtener el archivo/);
+  assert.equal(create.mock.callCount(), 0);
+});

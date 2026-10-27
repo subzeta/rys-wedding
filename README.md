@@ -20,7 +20,7 @@ un archivo privado ignorado por Git. Guarda una copia en tu gestor de contraseñ
 - Hasta 100 MiB por foto y 1 GiB por vídeo, en bloques de 8 MiB, con dos reintentos automáticos por bloque. Los límites se validan en el servidor.
 - Subidas en una ventana aparte, progreso visible y fotos recién subidas resaltadas en el mosaico.
 - Los administradores pueden eliminar originales y portadas desde cada tarjeta, con confirmación. Los invitados no pueden borrar archivos.
-- Todos los invitados pueden descargar originales, seleccionar varios recuerdos o descargar todo, sin ZIP. La descarga comienza al pulsar el botón, con archivos individuales consecutivos y su nombre y tipo originales. No se abre el menú de compartir ni una lista de enlaces. El navegador puede pedir permiso para varias descargas; los archivos se guardan en Descargas. Los enlaces firmados duran cinco minutos y se generan al usarlos.
+- Todos los invitados pueden descargar originales, seleccionar varios recuerdos o descargar todo, sin ZIP. La descarga comienza al pulsar el botón, con archivos individuales consecutivos y su nombre y tipo originales. Cada original se obtiene por completo y se guarda mediante una URL local del navegador para evitar que un enlace externo abra la foto. No se abre el menú de compartir ni una lista de enlaces. El navegador puede pedir permiso para varias descargas; los archivos se guardan en Descargas. Los enlaces firmados duran cinco minutos y se generan al usarlos. En móviles con poca memoria, los vídeos muy grandes pueden requerir más recursos porque se prepara un archivo completo cada vez.
 
 ## Preparación local
 
