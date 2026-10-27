@@ -28,7 +28,7 @@ export function cancelDownloads() {
   $("save-downloads").hidden = true;
 }
 
-export async function prepareDownloads({ api, post, selected, startDownload }) {
+export async function prepareDownloads({ api, post, selected, kind = "", startDownload }) {
   cancelDownloads();
   const controller = active = new AbortController();
   const { signal } = controller;
@@ -65,7 +65,10 @@ export async function prepareDownloads({ api, post, selected, startDownload }) {
     const wanted = selected && new Set(selected);
     let cursor;
     do {
-      const page = await (await api(`/api/items${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`, { signal })).json();
+      const query = new URLSearchParams();
+      if (kind) query.set("kind", kind);
+      if (cursor) query.set("cursor", cursor);
+      const page = await (await api(`/api/items${query.size ? `?${query}` : ""}`, { signal })).json();
       items.push(...page.items.filter((item) => !wanted || wanted.has(item.id)));
       cursor = page.cursor;
     } while (cursor);

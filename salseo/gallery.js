@@ -1,5 +1,5 @@
 import { API_URL } from "./config.js";
-import { prepareDownloads, cancelDownloads, downloadFile as startDownload } from "./downloads.js?v=20261027-3";
+import { prepareDownloads, cancelDownloads, downloadFile as startDownload } from "./downloads.js?v=20261027-7";
 
 const $ = (id) => document.getElementById(id);
 const base = API_URL.replace(/\/$/, "");
@@ -8,6 +8,7 @@ let role = "guest";
 let loginRole = "guest";
 let cursor = null;
 let itemCount = 0;
+let mediaFilter = "";
 let loading = null;
 let uploading = false;
 let settings;
@@ -27,6 +28,7 @@ function updateSelection() {
   $("download-selected").textContent = `Descargar selección (${selected.size})`;
   $("download-selected").disabled = preparingDownload || !selected.size;
   $("download-all").disabled = preparingDownload || !itemCount;
+  $("download-all").textContent = mediaFilter === "photo" ? "Descargar fotos" : mediaFilter === "video" ? "Descargar vídeos" : "Descargar todo";
   $("clear-selection").hidden = !selected.size;
 }
 
@@ -37,7 +39,7 @@ async function downloadMultiple(all) {
   updateSelection();
   $("download-dialog").showModal();
   try {
-    await prepareDownloads({ api, post, selected: all ? null : [...selected], startDownload });
+    await prepareDownloads({ api, post, selected: all ? null : [...selected], kind: mediaFilter, startDownload });
   } finally { preparingDownload = false; updateSelection(); }
 }
 
@@ -263,6 +265,25 @@ $("load-more").addEventListener("click", () => loadItems().catch((error) => mess
 $("close-viewer").addEventListener("click", () => closeViewer());
 $("viewer").addEventListener("click", (event) => { if (event.target === $("viewer")) closeViewer(); });
 
+document.querySelectorAll("[data-media-filter]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    if (button.dataset.mediaFilter === mediaFilter) return;
+    const previousFilter = mediaFilter;
+    mediaFilter = button.dataset.mediaFilter;
+    document.querySelectorAll("[data-media-filter]").forEach((option) => {
+      option.setAttribute("aria-pressed", String(option === button));
+      option.disabled = true;
+    });
+    try { await loadItems(true); }
+    catch (error) {
+      mediaFilter = previousFilter;
+      updateAlbumCount();
+      document.querySelectorAll("[data-media-filter]").forEach((option) => option.setAttribute("aria-pressed", String(option.dataset.mediaFilter === mediaFilter)));
+      message(error.message, true);
+    }
+  });
+});
+
 function viewerTiles() {
   return [...$("grid").querySelectorAll("button.media-tile")].filter((tile) => tile.dataset.kind === "video" || tile.querySelector("img"));
 }
@@ -377,7 +398,10 @@ async function loadItems(reset = false) {
 }
 
 function updateAlbumCount() {
-  $("album-count").textContent = `${itemCount}${cursor ? "+" : ""} ${itemCount === 1 ? "recuerdo compartido" : "recuerdos compartidos"}`;
+  const label = mediaFilter === "photo" ? (itemCount === 1 ? "foto" : "fotos") : mediaFilter === "video" ? (itemCount === 1 ? "vídeo" : "vídeos") : (itemCount === 1 ? "recuerdo compartido" : "recuerdos compartidos");
+  $("album-count").textContent = `${itemCount}${cursor ? "+" : ""} ${label}`;
+  $("album-title").textContent = mediaFilter === "photo" ? "Fotos" : mediaFilter === "video" ? "Vídeos" : "Todos los recuerdos";
+  $("empty-title").textContent = mediaFilter === "video" ? "Todavía no hay vídeos" : mediaFilter === "photo" ? "Todavía no hay fotos" : "Un día así merece muchas fotos";
   $("empty").hidden = itemCount !== 0;
   updateSelection();
 }
@@ -385,8 +409,19 @@ function updateAlbumCount() {
 async function renderItems(reset) {
   $("refresh").disabled = true;
   $("load-more").disabled = true;
+  $("grid").setAttribute("aria-busy", "true");
+  $("download-selected").disabled = $("download-all").disabled = true;
+  document.querySelectorAll("[data-media-filter]").forEach((button) => { button.disabled = true; });
   try {
-    const result = await (await api(`/api/items${!reset && cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`)).json();
+    let pageCursor = reset ? null : cursor;
+    let result;
+    do {
+      const query = new URLSearchParams();
+      if (mediaFilter) query.set("kind", mediaFilter);
+      if (pageCursor) query.set("cursor", pageCursor);
+      result = await (await api(`/api/items${query.size ? `?${query}` : ""}`)).json();
+      pageCursor = result.cursor;
+    } while (!result.items.length && pageCursor);
     if (reset) {
       closeViewer();
       $("grid").replaceChildren();
@@ -410,6 +445,9 @@ async function renderItems(reset) {
   } finally {
     $("refresh").disabled = false;
     $("load-more").disabled = false;
+    $("grid").setAttribute("aria-busy", "false");
+    updateSelection();
+    document.querySelectorAll("[data-media-filter]").forEach((button) => { button.disabled = false; });
   }
 }
 

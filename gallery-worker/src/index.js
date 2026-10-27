@@ -152,10 +152,12 @@ async function route(request, env) {
   }
 
   if (path === "/api/items" && method === "GET") {
+    const kind = url.searchParams.get("kind");
+    if (kind && !["photo", "video"].includes(kind)) fail(400, "Filtro no válido.");
     const cursor = url.searchParams.get("cursor") || undefined;
     if (cursor?.length > 2048) fail(400, "Página no válida.");
     const listed = await env.GALLERY.list({ prefix: "entries/", limit: 60, cursor, include: ["customMetadata"] });
-    const items = listed.objects.map((object) => publicRecord(JSON.parse(object.customMetadata.record), admin));
+    const items = listed.objects.map((object) => publicRecord(JSON.parse(object.customMetadata.record), admin)).filter((item) => !kind || item.kind === kind);
     return Response.json({ items, cursor: listed.truncated ? listed.cursor : null });
   }
 

@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="../styles.css" />
-    <link rel="stylesheet" href="gallery.css?v=20261027-6" />
-    <script type="module" src="gallery.js?v=20261027-6"></script>
+    <link rel="stylesheet" href="gallery.css?v=20261027-7" />
+    <script type="module" src="gallery.js?v=20261027-7"></script>
   </head>
   <body>
     <header class="gallery-header">
@@ -39,7 +39,7 @@
 
       <section id="album" hidden aria-label="Álbum compartido">
         <div class="album-toolbar">
-          <div><h2>Todos los recuerdos</h2><p id="album-count">Cargando recuerdos…</p></div>
+          <div><h2 id="album-title">Todos los recuerdos</h2><p id="album-count">Cargando recuerdos…</p></div>
           <div class="toolbar-actions">
             <button class="btn" data-open-upload type="button">＋ Subir fotos y vídeos</button>
             <button class="icon-button" id="refresh" type="button" aria-label="Actualizar álbum" title="Actualizar álbum">↻</button>
@@ -51,6 +51,11 @@
           <strong>Acceso privado</strong>
           <p>Desde cada tarjeta puedes eliminar un recuerdo del álbum.</p>
         </aside>
+        <div class="media-filters" role="group" aria-label="Filtrar recuerdos por tipo">
+          <button type="button" data-media-filter="" aria-pressed="true">Todo</button>
+          <button type="button" data-media-filter="photo" aria-pressed="false">Fotos</button>
+          <button type="button" data-media-filter="video" aria-pressed="false">Vídeos</button>
+        </div>
         <div class="bulk-actions" aria-label="Descargar fotos y vídeos">
           <button id="download-selected" class="btn btn-secondary" type="button" disabled>Descargar selección (0)</button>
           <button id="download-all" class="btn" type="button">Descargar todo</button>
@@ -58,7 +63,7 @@
         </div>
         <p class="album-note">Fotos para revivirlo todo. Pulsa ▶ para ver los vídeos.</p>
         <div id="grid" class="photo-grid" tabindex="-1" aria-label="Fotos y vídeos compartidos"></div>
-        <div id="empty" class="empty-state" hidden><span aria-hidden="true">♡</span><h3>Un día así merece muchas fotos</h3><p>Estrena el álbum con tus momentos favoritos.</p><button class="btn" data-open-upload type="button">＋ Compartir mis recuerdos</button></div>
+        <div id="empty" class="empty-state" hidden><span aria-hidden="true">♡</span><h3 id="empty-title">Un día así merece muchas fotos</h3><p>Estrena el álbum con tus momentos favoritos.</p><button class="btn" data-open-upload type="button">＋ Compartir mis recuerdos</button></div>
         <button id="load-more" class="btn btn-secondary" type="button" hidden>Ver más recuerdos</button>
       </section>
       <p id="message" class="message" role="status" aria-live="polite" hidden></p>

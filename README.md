@@ -12,6 +12,7 @@ un archivo privado ignorado por Git. Guarda una copia en tu gestor de contraseñ
 
 - Fotos y vídeos originales en un bucket **R2 Standard privado**.
 - Copias JPEG de hasta 1600 píxeles y 500 KB para mostrar las fotos y portadas.
+- Selector Todo / Fotos / Vídeos para filtrar el listado, las flechas del visor y la descarga completa. El filtro busca también en las páginas todavía sin cargar.
 - Los vídeos se reproducen dentro del visor con controles nativos. Solo se solicita el original al pulsar reproducir; no hay reproducción automática. Las flechas recorren fotos y vídeos.
 - Código compartido para invitados y otro código privado para los administradores.
 - Ambos códigos ignoran mayúsculas/minúsculas y espacios al principio o al final.

@@ -82,3 +82,17 @@ test("a failed photo fetch cannot navigate or download an error page", async (t)
   await assert.rejects(downloadFile("https://api.example/photo.jpg", "foto.jpg"), /obtener el archivo/);
   assert.equal(create.mock.callCount(), 0);
 });
+
+test("download all respects the active type filter on every page", async () => {
+  const { options, sent } = setup();
+  const queries = [];
+  await prepareDownloads({ ...options, kind: "video", selected: null, api: async (path) => {
+    const url = new URL(path, "https://gallery.example");
+    queries.push(url);
+    return { json: async () => url.searchParams.has("cursor") ? { items: [{ id: "video", name: "baile.mov" }], cursor: null } : { items: [], cursor: "next" } };
+  } });
+  assert.equal(queries.length, 2);
+  assert.ok(queries.every((url) => url.searchParams.get("kind") === "video"));
+  assert.equal(queries[1].searchParams.get("cursor"), "next");
+  assert.deepEqual(sent.map((item) => item.name), ["baile.mov"]);
+});

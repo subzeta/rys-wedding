@@ -357,3 +357,30 @@ test("guests can play only the signed video and seek using byte ranges without a
   await call(`/api/uploads/${photo.id}/complete`, { token: guest, method: "POST", body: { parts: photo.parts } });
   assert.equal((await call(`/api/items/${photo.id}/play`, { token: guest, method: "POST", body: {} })).status, 400);
 });
+
+test("type filters keep pagination across pages containing only the other media type", async () => {
+  const { call, login, env } = setup();
+  const token = await login();
+  for (let index = 0; index < 121; index++) {
+    const record = { id: String(index).padStart(3, "0"), kind: index < 120 ? "photo" : "video", name: `item-${index}`, size: 1 };
+    await env.GALLERY.put(`entries/${record.id}.json`, JSON.stringify(record), { customMetadata: { record: JSON.stringify(record) } });
+  }
+  const videos = [];
+  let cursor;
+  let pages = 0;
+  do {
+    const page = await (await call(`/api/items?kind=video${cursor ? `&cursor=${cursor}` : ""}`, { token })).json();
+    assert.ok(page.items.every((item) => item.kind === "video"));
+    videos.push(...page.items);
+    cursor = page.cursor;
+    pages++;
+  } while (cursor);
+  assert.equal(pages, 3);
+  assert.equal(videos.length, 1);
+  const photos = await (await call("/api/items?kind=photo", { token })).json();
+  assert.equal(photos.items.length, 60);
+  assert.ok(photos.items.every((item) => item.kind === "photo"));
+  const all = await (await call("/api/items?cursor=120", { token })).json();
+  assert.equal(all.items[0].kind, "video");
+  assert.equal((await call("/api/items?kind=unknown", { token })).status, 400);
+});
