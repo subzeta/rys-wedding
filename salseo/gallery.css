@@ -142,5 +142,3 @@ body:has(dialog[open]) { overflow: hidden; }
 .select-item input { width: 20px; height: 20px; accent-color: var(--accent-dark); }
 .media-card:has(.select-item input:checked) { outline: 3px solid var(--accent-dark); outline-offset: -3px; }
 .media-card:has(.select-item) .media-caption { bottom: 80px; }
-#download-links { padding-left: 1.3rem; max-height: 35dvh; overflow: auto; }
-#download-links a { display: inline-block; padding-block: .5rem; overflow-wrap: anywhere; }

@@ -11,6 +11,15 @@ const TYPES = new Map([
   ["video/3gpp", "video"], ["video/x-m4v", "video"],
 ]);
 
+function downloadName(name) {
+  return name.replaceAll("\\", "/").split("/").pop().replace(/[\x00-\x1f\x7f]/g, "_") || "original";
+}
+
+function originalType(name) {
+  const ext = name.split(".").pop().toLowerCase();
+  return ({ jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", heic: "image/heic", heif: "image/heif", avif: "image/avif", mp4: "video/mp4", mov: "video/quicktime", webm: "video/webm", "3gp": "video/3gpp", m4v: "video/x-m4v" })[ext] || "application/octet-stream";
+}
+
 function fail(status, message) {
   throw Object.assign(new Error(message), { status });
 }
@@ -121,7 +130,7 @@ async function route(request, env) {
     return Response.json({ token: await issue(env, role), role });
   }
 
-  const downloadMatch = path.match(/^\/api\/download\/([^/]+)$/);
+  const downloadMatch = path.match(/^\/api\/download\/([^/]+)(?:\/[^/]+)?$/);
   if (downloadMatch && method === "GET") {
     const session = await authenticate(request, env, url.searchParams.get("token") || "");
     const id = downloadMatch[1];
@@ -172,7 +181,7 @@ async function route(request, env) {
     }
     if (action === "download" && method === "POST") {
       const token = await issue(env, "download", { item: id });
-      return Response.json({ url: `${url.origin}/api/download/${id}?token=${token}` });
+      return Response.json({ url: `${url.origin}/api/download/${id}/${encodeURIComponent(downloadName(record.name))}?token=${token}` });
     }
     if (method !== "GET" || action === "download") fail(405, "Método no permitido.");
     if (action === "original") return originalResponse(env, record);
@@ -249,9 +258,11 @@ async function route(request, env) {
 async function originalResponse(env, record) {
   const object = await env.GALLERY.get(record.originalKey);
   if (!object) fail(404, "No encontramos este archivo.");
+  const name = downloadName(record.name);
+  const fallback = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9._-]/g, "_");
   return new Response(object.body, { headers: {
-    "Content-Type": "application/octet-stream", "Content-Length": String(object.size),
-    "Content-Disposition": `attachment; filename="${record.id}"; filename*=UTF-8''${encodeURIComponent(record.name).replaceAll("'", "%27")}`,
+    "Content-Type": originalType(name), "Content-Length": String(object.size),
+    "Content-Disposition": `attachment; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(name).replaceAll("'", "%27")}`,
   } });
 }
 

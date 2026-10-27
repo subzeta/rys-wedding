@@ -141,7 +141,7 @@ test("incomplete files stay private; completion is idempotent; direct original a
   assert.equal((await call(`/api/items/${id}/preview`, { token: guest })).status, 200);
   const original = await call(`/api/items/${id}/original`, { token: admin });
   assert.equal(original.status, 200);
-  assert.equal(original.headers.get("Content-Type"), "application/octet-stream");
+  assert.equal(original.headers.get("Content-Type"), "video/quicktime");
   assert.match(original.headers.get("Content-Disposition"), /^attachment;/);
   assert.deepEqual(new Uint8Array(await original.arrayBuffer()), new Uint8Array([1, 2, 3, 4]));
   assert.equal((await call(`/api/uploads/${id}/preview`, { token: guest, method: "PUT", raw: preview })).status, 409);
@@ -285,4 +285,26 @@ test("guests can download signed originals, while only admins can repair publish
   const items = await (await call("/api/items", { token: guest })).json();
   assert.equal(items.items[0].hasPreview, true);
   assert.deepEqual(new Uint8Array(await (await call(`/api/items/${id}/preview`, { token: guest })).arrayBuffer()), raw);
+});
+
+test("signed downloads retain image/video types and safe filenames with extensions", async () => {
+  const { call, login, upload } = setup();
+  const guest = await login();
+  for (const [name, type, fallback] of [
+    ['foto de Raquel.jpg', 'image/jpeg', 'foto_de_Raquel.jpg'],
+    ['álbum.heic', 'image/heic', 'album.heic'],
+    ['baile.mp4', 'video/mp4', 'baile.mp4'],
+    ['brindis.mov', 'video/quicktime', 'brindis.mov'],
+    ['../foto"rara.jpg', 'image/jpeg', 'foto_rara.jpg'],
+  ]) {
+    const { id, parts } = await upload(guest, { name, type });
+    await call(`/api/uploads/${id}/complete`, { token: guest, method: "POST", body: { parts } });
+    const link = new URL((await (await call(`/api/items/${id}/download`, { token: guest, method: "POST", body: {} })).json()).url);
+    const response = await call(link.pathname + link.search);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("Content-Type"), type);
+    assert.ok(response.headers.get("Content-Disposition").includes(`filename="${fallback}"`));
+    assert.ok(decodeURIComponent(link.pathname).endsWith(name.split('/').pop()));
+    assert.deepEqual(new Uint8Array(await response.arrayBuffer()), new Uint8Array([1, 2, 3, 4]));
+  }
 });

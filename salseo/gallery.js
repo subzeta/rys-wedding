@@ -1,5 +1,5 @@
 import { API_URL } from "./config.js";
-import { prepareDownloads, cancelDownloads } from "./downloads.js";
+import { prepareDownloads, cancelDownloads } from "./downloads.js?v=20261027-2";
 
 const $ = (id) => document.getElementById(id);
 const base = API_URL.replace(/\/$/, "");
