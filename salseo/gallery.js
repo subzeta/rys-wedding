@@ -23,6 +23,29 @@ let preparingDownload = false;
 let viewedTile = null;
 let viewerBusy = false;
 let playbackRequest = 0;
+const previewQueue = [];
+let activePreviews = 0;
+const previewObserver = new IntersectionObserver((entries) => {
+  for (const entry of entries) {
+    if (!entry.isIntersecting) continue;
+    previewObserver.unobserve(entry.target);
+    previewQueue.push(entry.target);
+  }
+  loadVisiblePreviews();
+}, { rootMargin: "500px" });
+
+function loadVisiblePreviews() {
+  while (activePreviews < 4 && previewQueue.length) {
+    const tile = previewQueue.shift();
+    if (!tile.isConnected) continue;
+    activePreviews++;
+    loadPreview(tile.mediaItem, tile).finally(() => {
+      activePreviews--;
+      loadVisiblePreviews();
+    });
+  }
+}
+
 
 function updateSelection() {
   $("download-selected").textContent = `Descargar selección (${selected.size})`;
@@ -190,6 +213,8 @@ const post = async (path, body) => (await api(path, {
 })).json();
 
 function releasePreviews() {
+  previewObserver.disconnect();
+  previewQueue.length = 0;
   for (const url of previewURLs) URL.revokeObjectURL(url);
   previewURLs.clear();
 }
@@ -285,7 +310,7 @@ document.querySelectorAll("[data-media-filter]").forEach((button) => {
 });
 
 function viewerTiles() {
-  return [...$("grid").querySelectorAll("button.media-tile")].filter((tile) => tile.dataset.kind === "video" || tile.querySelector("img"));
+  return [...$("grid").querySelectorAll("button.media-tile")];
 }
 
 function updateViewerNavigation() {
@@ -310,7 +335,6 @@ function stopVideo() {
 }
 
 async function showMedia(tile) {
-  if (tile.dataset.kind !== "video" && !tile.querySelector("img")) return;
   viewedTile = tile;
   stopVideo();
   const request = playbackRequest;
@@ -320,15 +344,23 @@ async function showMedia(tile) {
   $("viewer-video").hidden = !video;
   $("viewer-download").hidden = !video;
   $("viewer").classList.toggle("showing-video", video);
-  if (img && !video) {
-    $("viewer-image").src = img.src;
-    $("viewer-image").alt = img.alt;
-  }
+  $("viewer-image").removeAttribute("src");
   $("viewer-caption").textContent = tile.querySelector(".media-caption").textContent || "Raquel & Sergio · 24 de octubre de 2026";
   $("viewer-status").textContent = video ? "Preparando vídeo…" : "";
   updateViewerNavigation();
   if (!$("viewer").open) $("viewer").showModal();
-  if (!video) return;
+  if (!video) {
+    $("viewer-status").textContent = "Cargando foto…";
+    await loadPreview(tile.mediaItem, tile);
+    if (request !== playbackRequest || !$("viewer").open) return;
+    const photo = tile.querySelector("img");
+    if (photo) {
+      $("viewer-image").src = photo.src;
+      $("viewer-image").alt = photo.alt;
+    }
+    $("viewer-status").textContent = photo ? "" : "No se ha podido cargar la foto. Cierra el visor y vuelve a intentarlo.";
+    return;
+  }
   if (img) $("viewer-video").poster = img.src;
   try {
     const result = await post(`/api/items/${tile.closest(".media-card").dataset.id}/play`, {});
@@ -414,14 +446,15 @@ async function renderItems(reset) {
   document.querySelectorAll("[data-media-filter]").forEach((button) => { button.disabled = true; });
   try {
     let pageCursor = reset ? null : cursor;
-    let result;
+    const result = { items: [], cursor: null };
     do {
       const query = new URLSearchParams();
       if (mediaFilter) query.set("kind", mediaFilter);
       if (pageCursor) query.set("cursor", pageCursor);
-      result = await (await api(`/api/items${query.size ? `?${query}` : ""}`)).json();
-      pageCursor = result.cursor;
-    } while (!result.items.length && pageCursor);
+      const page = await (await api(`/api/items${query.size ? `?${query}` : ""}`)).json();
+      result.items.push(...page.items);
+      result.cursor = pageCursor = page.cursor;
+    } while (pageCursor && (mediaFilter || !result.items.length));
     if (reset) {
       closeViewer();
       $("grid").replaceChildren();
@@ -434,14 +467,7 @@ async function renderItems(reset) {
     updateAlbumCount();
     $("load-more").hidden = !cursor;
     const tiles = result.items.map(addTile);
-    // Limit simultaneous downloads to keep mobile connections responsive.
-    let next = 0;
-    await Promise.all(Array.from({ length: Math.min(4, tiles.length) }, async () => {
-      while (next < tiles.length) {
-        const index = next++;
-        await loadPreview(result.items[index], tiles[index]);
-      }
-    }));
+    for (const tile of tiles) if (tile.mediaItem.hasPreview) previewObserver.observe(tile);
   } finally {
     $("refresh").disabled = false;
     $("load-more").disabled = false;
@@ -465,6 +491,7 @@ function addTile(item) {
   }
   const tile = document.createElement(item.kind === "video" || item.hasPreview ? "button" : "div");
   tile.className = "media-tile";
+  tile.mediaItem = item;
   tile.dataset.kind = item.kind;
   tile.dataset.name = item.name;
   if (tile.tagName === "BUTTON") {
@@ -543,8 +570,13 @@ function addTile(item) {
   return tile;
 }
 
-async function loadPreview(item, tile) {
-  if (!item.hasPreview) return;
+function loadPreview(item, tile) {
+  if (!item.hasPreview || tile.querySelector("img")) return Promise.resolve();
+  if (!tile.previewLoading) tile.previewLoading = renderPreview(item, tile).finally(() => { tile.previewLoading = null; });
+  return tile.previewLoading;
+}
+
+async function renderPreview(item, tile) {
   try {
     const response = await api(`/api/items/${item.id}/preview`);
     const blob = await response.blob();
